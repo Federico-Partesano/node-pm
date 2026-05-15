@@ -11,7 +11,8 @@ type Props = {
   onSelect: (name: string) => void;
 };
 
-export function Groups({ groups, selected, focused, onSelect }: Props) {
+export const Groups = React.memo(GroupsImpl);
+function GroupsImpl({ groups, selected, focused, onSelect }: Props) {
   useInput((input, key) => {
     if (!focused) return;
     const idx = groups.findIndex((g) => g.name === selected);

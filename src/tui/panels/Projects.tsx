@@ -13,7 +13,8 @@ type Props = {
   onToggle: (name: string) => void;
 };
 
-export function Projects({ projects, statusByName, selected, cursor, focused, onCursor, onToggle }: Props) {
+export const Projects = React.memo(ProjectsImpl);
+function ProjectsImpl({ projects, statusByName, selected, cursor, focused, onCursor, onToggle }: Props) {
   useInput((input, key) => {
     if (!focused) return;
     const idx = projects.findIndex((p) => p.name === cursor);

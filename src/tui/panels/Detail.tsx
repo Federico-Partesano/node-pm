@@ -9,7 +9,8 @@ type Props = {
   pmName: PMName | null;
 };
 
-export function Detail({ project, path, pmName }: Props) {
+export const Detail = React.memo(DetailImpl);
+function DetailImpl({ project, path, pmName }: Props) {
   if (!project) {
     return (
       <Panel title="Detail" accent="green">

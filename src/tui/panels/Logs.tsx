@@ -6,7 +6,8 @@ export type LogTab = { id: string; label: string; lines: string[] };
 
 type Props = { tabs: LogTab[]; activeId: string | null };
 
-export function Logs({ tabs, activeId }: Props) {
+export const Logs = React.memo(LogsImpl);
+function LogsImpl({ tabs, activeId }: Props) {
   const active = tabs.find((t) => t.id === activeId) ?? tabs[0];
   const subtitle = tabs.length === 0 ? 'no logs' : `${tabs.length} stream${tabs.length === 1 ? '' : 's'}`;
   return (

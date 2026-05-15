@@ -3,7 +3,8 @@ import { Box, Text } from 'ink';
 import type { QueueTask } from '../hooks/useQueue.js';
 import { Panel } from '../components/Panel.js';
 
-export function Tasks({ tasks }: { tasks: QueueTask[] }) {
+export const Tasks = React.memo(TasksImpl);
+function TasksImpl({ tasks }: { tasks: QueueTask[] }) {
   const running = tasks.filter((t) => t.status === 'running').length;
   const done = tasks.filter((t) => t.status === 'done').length;
   const failed = tasks.filter((t) => t.status === 'error').length;
