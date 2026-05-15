@@ -41,6 +41,13 @@ export function EmptyState({ root }: Props) {
         <Text color="cyan">node dist/index.js</Text>
         <Text dimColor>.</Text>
       </Box>
+      <Box marginTop={1}>
+        <Text dimColor>Press </Text>
+        <Text bold color="yellow">s</Text>
+        <Text dimColor> to start the scan wizard, </Text>
+        <Text bold color="yellow">n</Text>
+        <Text dimColor> to add one project.</Text>
+      </Box>
     </Box>
   );
 }

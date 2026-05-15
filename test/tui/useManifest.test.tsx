@@ -13,6 +13,7 @@ const mockLoad = vi.fn(async () => ({
 vi.mock('../../src/core/manifest.js', () => ({
   ManifestStore: class {
     load = mockLoad;
+    invalidate() {}
   },
 }));
 

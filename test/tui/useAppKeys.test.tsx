@@ -145,4 +145,26 @@ describe('useAppKeys', () => {
     press('q');
     expect(mockExit).toHaveBeenCalledTimes(1);
   });
+
+  it("enabled=true: 'n' calls onAddProject when provided", () => {
+    const onAddProject = vi.fn();
+    const args = makeArgs({ enabled: true, onAddProject });
+    render(<Harness args={args} />);
+    press('n');
+    expect(onAddProject).toHaveBeenCalledTimes(1);
+  });
+
+  it("enabled=false: 'n' does not call onAddProject", () => {
+    const onAddProject = vi.fn();
+    const args = makeArgs({ enabled: false, onAddProject });
+    render(<Harness args={args} />);
+    press('n');
+    expect(onAddProject).not.toHaveBeenCalled();
+  });
+
+  it("'n' is a no-op when onAddProject is not provided", () => {
+    const args = makeArgs({ enabled: true });
+    render(<Harness args={args} />);
+    expect(() => press('n')).not.toThrow();
+  });
 });

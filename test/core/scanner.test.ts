@@ -319,3 +319,75 @@ describe('ProjectScanner', () => {
     expect(found.every((f) => f.name !== 'README.md')).toBe(true);
   });
 });
+
+describe('ProjectScanner.scanStream', () => {
+  async function collect<T>(it: AsyncIterable<T>): Promise<T[]> {
+    const out: T[] = [];
+    for await (const v of it) out.push(v);
+    return out;
+  }
+
+  it('yields enter-group, enter-repo and found events for a valid repo', async () => {
+    vol.fromJSON({
+      '/root/g1/repo-a/.git/HEAD': 'ref',
+      '/root/g1/repo-a/package.json': '{}',
+    });
+    const events = await collect(new ProjectScanner().scanStream('/root'));
+    const kinds = events.map((e) => e.kind);
+    expect(kinds).toContain('enter-group');
+    expect(kinds).toContain('enter-repo');
+    expect(kinds).toContain('found');
+    const found = events.find((e) => e.kind === 'found');
+    expect(found && found.kind === 'found' && found.project.name).toBe('repo-a');
+  });
+
+  it("yields a 'not-git' skip when .git is missing", async () => {
+    vol.fromJSON({
+      '/root/g1/no-git/package.json': '{}',
+    });
+    const events = await collect(new ProjectScanner().scanStream('/root'));
+    const skip = events.find((e) => e.kind === 'skip');
+    expect(skip && skip.kind === 'skip' && skip.reason).toBe('not-git');
+  });
+
+  it("yields a 'not-node' skip when package.json is missing", async () => {
+    vol.fromJSON({
+      '/root/g1/no-pkg/.git/HEAD': 'ref',
+    });
+    const events = await collect(new ProjectScanner().scanStream('/root'));
+    const skip = events.find((e) => e.kind === 'skip');
+    expect(skip && skip.kind === 'skip' && skip.reason).toBe('not-node');
+  });
+
+  it("yields a 'no-remote' skip when remote.origin.url is empty", async () => {
+    vol.fromJSON({
+      '/root/g1/no-remote/.git/HEAD': 'ref',
+      '/root/g1/no-remote/package.json': '{}',
+    });
+    // remoteMap returns '' for the new path → no-remote skip
+    const events = await collect(new ProjectScanner().scanStream('/root'));
+    const skip = events.find((e) => e.kind === 'skip');
+    expect(skip && skip.kind === 'skip' && skip.reason).toBe('no-remote');
+  });
+
+  it('throws ScannerError E_SCAN_ROOT when root is unreadable', async () => {
+    const it = new ProjectScanner().scanStream('/nonexistent');
+    await expect(collect(it)).rejects.toSatisfy(
+      (e: unknown) =>
+        e instanceof ScannerError && (e as ScannerError).code === 'E_SCAN_ROOT',
+    );
+  });
+
+  it('order: enter-group precedes enter-repo, which precedes found', async () => {
+    vol.fromJSON({
+      '/root/g1/repo-a/.git/HEAD': 'ref',
+      '/root/g1/repo-a/package.json': '{}',
+    });
+    const events = await collect(new ProjectScanner().scanStream('/root'));
+    const ig = events.findIndex((e) => e.kind === 'enter-group');
+    const ir = events.findIndex((e) => e.kind === 'enter-repo');
+    const ifo = events.findIndex((e) => e.kind === 'found');
+    expect(ig).toBeLessThan(ir);
+    expect(ir).toBeLessThan(ifo);
+  });
+});

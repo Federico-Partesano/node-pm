@@ -1,20 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ManifestStore } from '../../core/manifest.js';
 import type { Manifest, Project } from '../../shared/types.js';
 
 export function useManifest() {
+  const store = useMemo(() => new ManifestStore(), []);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    const store = new ManifestStore();
-    store.load()
-      .then((m) => { setManifest(m); setProjects(m.projects); })
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      store.invalidate();
+      const m = await store.load();
+      setManifest(m);
+      setProjects(m.projects);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [store]);
 
-  return { manifest, projects, loading, error };
+  useEffect(() => { void reload(); }, [reload]);
+
+  return { manifest, projects, loading, error, reload, store };
 }

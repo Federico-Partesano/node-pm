@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Text, useInput } from 'ink';
 import { useManifest } from './hooks/useManifest.js';
 import { useGitStatus } from './hooks/useGitStatus.js';
 import { useQueue } from './hooks/useQueue.js';
@@ -18,14 +18,20 @@ import { Logs } from './panels/Logs.js';
 import { Header } from './components/Header.js';
 import { Footer } from './components/Footer.js';
 import { EmptyState } from './components/EmptyState.js';
+import { OnboardingWizard } from './components/OnboardingWizard.js';
+import { AddProjectForm } from './components/AddProjectForm.js';
+import { DebugBar } from './components/DebugBar.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
 import { ScriptRunner } from '../core/runner.js';
+import { getDefaultRoot } from '../shared/paths.js';
 import type { GitStatus } from '../shared/types.js';
 
+type EmptyMode = 'wizard' | 'help';
+
 export function App() {
-  const { manifest, projects, loading } = useManifest();
+  const { manifest, projects, loading, reload } = useManifest();
   const git = useMemo(() => new GitOps(), []);
   const pm = useMemo(() => new PackageManager(), []);
   const runner = useMemo(() => new ScriptRunner(), []);
@@ -35,6 +41,8 @@ export function App() {
   const groupSummaries = useGroupSummaries(projects);
   const state = useAppState();
   const { activeGroup, setActiveGroup, cursor, setCursor, selected, panel } = state;
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [emptyMode, setEmptyMode] = useState<EmptyMode>('wizard');
 
   useEffect(() => {
     if (!activeGroup && groupSummaries[0]) setActiveGroup(groupSummaries[0].name);
@@ -63,8 +71,19 @@ export function App() {
   const selectedProjects = visible.filter((p) => selected.has(p.name));
   const bulk = useBulkActions({ queue, git, pm, selectedProjects, pathByName });
 
+  const isEmpty = projects.length === 0;
+
+  // Empty-state: while showing static help, 's' relaunches wizard, 'n' opens add form.
+  useInput((input) => {
+    if (!manifest || !isEmpty || showAddForm) return;
+    if (emptyMode === 'help') {
+      if (input === 's') setEmptyMode('wizard');
+      if (input === 'n') setShowAddForm(true);
+    }
+  });
+
   useAppKeys({
-    enabled: !!manifest,
+    enabled: !!manifest && !isEmpty && !showAddForm,
     onTab: state.nextPanel,
     onSelectAll: () => state.selectAll(visible.map((p) => p.name)),
     onClearSelection: state.clearSelection,
@@ -75,6 +94,7 @@ export function App() {
       const fav = cur?.scripts?.favorites?.[0];
       if (cur && fav && curPath) void runScript(cur, fav, curPath);
     },
+    onAddProject: () => setShowAddForm(true),
   });
 
   if (loading) {
@@ -85,8 +105,7 @@ export function App() {
     );
   }
 
-  const isEmpty = projects.length === 0;
-  const root = manifest?.root ?? '~/Documents/projects';
+  const root = manifest?.root ?? getDefaultRoot();
 
   return (
     <Box flexDirection="column">
@@ -98,7 +117,20 @@ export function App() {
       />
 
       {isEmpty ? (
-        <EmptyState root={root} />
+        showAddForm ? (
+          <AddProjectForm
+            onDone={() => { setShowAddForm(false); void reload(); }}
+            onCancel={() => setShowAddForm(false)}
+          />
+        ) : emptyMode === 'wizard' ? (
+          <OnboardingWizard
+            initialRoot={root}
+            onComplete={() => { void reload(); }}
+            onCancel={() => setEmptyMode('help')}
+          />
+        ) : (
+          <EmptyState root={root} />
+        )
       ) : (
         <>
           <Box>
@@ -133,10 +165,17 @@ export function App() {
               <Logs tabs={logs} activeId={activeLog} />
             </Box>
           </Box>
+          {showAddForm && (
+            <AddProjectForm
+              onDone={() => { setShowAddForm(false); void reload(); }}
+              onCancel={() => setShowAddForm(false)}
+            />
+          )}
         </>
       )}
 
       <Footer />
+      <DebugBar />
     </Box>
   );
 }

@@ -6,7 +6,12 @@ import { App } from './tui/App.js';
 async function main() {
   const argv = process.argv;
   if (argv.length <= 2) {
-    render(React.createElement(App));
+    if (!process.stdin.isTTY) {
+      console.error('node-pm TUI requires an interactive terminal (no TTY detected on stdin).');
+      console.error('Try running directly: node dist/index.js');
+      process.exit(1);
+    }
+    render(React.createElement(App), { stdin: process.stdin, stdout: process.stdout });
     return;
   }
   await runCli(argv);

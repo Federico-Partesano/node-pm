@@ -15,6 +15,7 @@ vi.mock('../../src/core/manifest.js', () => ({
       { name: 'b', group: 'g2', url: 'u' },
     ]; }
     resolvePath(p: any) { return `/r/${p.group}/${p.name}`; }
+    invalidate() {}
   },
 }));
 vi.mock('../../src/core/git.js', () => ({
