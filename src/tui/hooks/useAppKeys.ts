@@ -10,6 +10,8 @@ type Args = {
   onInstall: () => void;
   onRun: () => void;
   onAddProject?: () => void;
+  onCloneAll?: () => void;
+  onExport?: () => void;
 };
 
 /**
@@ -30,5 +32,7 @@ export function useAppKeys(a: Args): void {
     if (input === 'i') a.onInstall();
     if (input === 'r') a.onRun();
     if (input === 'n' && a.onAddProject) a.onAddProject();
+    if (input === 'C' && a.onCloneAll) a.onCloneAll();
+    if (input === 'e' && a.onExport) a.onExport();
   });
 }

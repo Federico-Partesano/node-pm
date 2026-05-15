@@ -11,6 +11,7 @@ import { useScriptLogs } from './hooks/useScriptLogs.js';
 import { useBulkActions } from './hooks/useBulkActions.js';
 import { useAppKeys } from './hooks/useAppKeys.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
+import { useSnapshot } from './hooks/useSnapshot.js';
 import { Groups } from './panels/Groups.js';
 import { Projects } from './panels/Projects.js';
 import { Detail } from './panels/Detail.js';
@@ -26,7 +27,7 @@ import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
 import { ScriptRunner } from '../core/runner.js';
-import { getBestRoot, pathExists } from '../shared/paths.js';
+import { getBestRoot, pathExists, resolveProjectPath } from '../shared/paths.js';
 import type { GitStatus } from '../shared/types.js';
 
 type EmptyMode = 'wizard' | 'help';
@@ -70,7 +71,17 @@ export function App() {
 
   const { logs, activeLog, runScript } = useScriptLogs(runner);
   const selectedProjects = visible.filter((p) => selected.has(p.name));
-  const bulk = useBulkActions({ queue, git, pm, selectedProjects, pathByName });
+  const resolvePath = useMemo(
+    () => (p: { group: string; name: string; url: string }) =>
+      manifest ? resolveProjectPath(manifest.root, p as never) : '',
+    [manifest],
+  );
+  const bulk = useBulkActions({
+    queue, git, pm, selectedProjects, pathByName,
+    allProjects: projects,
+    resolvePath,
+  });
+  const snapshot = useSnapshot(manifest);
   const { cols, rows } = useTerminalSize();
 
   const isEmpty = projects.length === 0;
@@ -97,6 +108,8 @@ export function App() {
       if (cur && fav && curPath) void runScript(cur, fav, curPath);
     },
     onAddProject: () => setShowAddForm(true),
+    onCloneAll: bulk.cloneAll,
+    onExport: () => { void snapshot.exportSnapshot(); },
   });
 
   if (loading) {
@@ -176,6 +189,15 @@ export function App() {
         </Box>
       )}
 
+      {snapshot.last && (
+        <Box paddingX={2}>
+          {snapshot.last.ok ? (
+            <Text color="green">✓ Snapshot exported to {snapshot.last.path}</Text>
+          ) : (
+            <Text color="red">✗ Export failed: {snapshot.last.error}</Text>
+          )}
+        </Box>
+      )}
       <Footer />
       <DebugBar />
     </Box>

@@ -10,8 +10,11 @@ const HINTS: KeyHint[] = [
   { key: 'a/A', label: 'all/clear' },
   { key: 'p', label: 'pull' },
   { key: 'c', label: 'clone' },
+  { key: 'C', label: 'clone-all' },
   { key: 'i', label: 'install' },
   { key: 'r', label: 'run' },
+  { key: 'n', label: 'new' },
+  { key: 'e', label: 'export' },
   { key: 'q', label: 'quit' },
 ];
 
