@@ -14,12 +14,16 @@ vi.mock('write-file-atomic', () => ({
     await fs.promises.writeFile(p, data);
   },
 }));
-vi.mock('../../src/shared/paths.js', () => ({
-  getManifestPath: () => '/cfg/projects.json',
-  getDefaultRoot: () => '/r',
-  getConfigDir: () => '/cfg',
-  expandHome: (s: string) => s,
-}));
+vi.mock('../../src/shared/paths.js', async () => {
+  const actual: any = await vi.importActual('../../src/shared/paths.js');
+  return {
+    ...actual,
+    getManifestPath: () => '/cfg/projects.json',
+    getDefaultRoot: () => '/r',
+    getConfigDir: () => '/cfg',
+    expandHome: (s: string) => s,
+  };
+});
 
 const cloneCalls: string[] = [];
 const pullCalls: string[] = [];
