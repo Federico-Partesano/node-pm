@@ -42,7 +42,7 @@ describe('Detail panel', () => {
     expect(out).toContain('No project selected');
   });
 
-  it('project with no scripts shows Scripts label but no items', () => {
+  it('project with no scripts shows Favorite scripts label but no items', () => {
     const { lastFrame } = render(
       <Detail
         project={mkProject({ scripts: undefined })}
@@ -51,9 +51,9 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Scripts:');
+    expect(out).toContain('Favorite scripts');
     // No bullet points since there are no favorites
-    expect(out).not.toContain('•');
+    expect(out).not.toContain('▸');
   });
 
   it('project with empty favorites array shows no script rows', () => {
@@ -65,8 +65,8 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Scripts:');
-    expect(out).not.toContain('•');
+    expect(out).toContain('Favorite scripts');
+    expect(out).not.toContain('▸');
   });
 
   it('project with multiple favorites lists all of them', () => {
@@ -93,9 +93,9 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Path:');
-    // Should show '-' when path is null
-    expect(out).toMatch(/Path:\s+-/);
+    expect(out).toContain('Path');
+    // Should show '—' (em dash) when path is null
+    expect(out).toContain('—');
   });
 
   it('pmName null renders a dash placeholder', () => {
@@ -107,8 +107,8 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('PM:');
-    expect(out).toMatch(/PM:\s+-/);
+    expect(out).toContain('PM');
+    expect(out).toContain('—');
   });
 
   it('pmName npm is rendered', () => {
@@ -175,7 +175,7 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Remote:');
+    expect(out).toContain('Remote');
     expect(out).toContain('git@github.com:user/repo.git');
   });
 
@@ -188,7 +188,7 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Path:');
+    expect(out).toContain('Path');
     expect(out).toContain('/home/user/projects/my-group/my-project');
   });
 
@@ -201,7 +201,7 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('•');
+    expect(out).toContain('▸');
     expect(out).toContain('start');
   });
 });

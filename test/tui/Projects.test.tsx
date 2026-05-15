@@ -38,8 +38,8 @@ describe('Projects panel', () => {
     expect(out).toContain('b');
     expect(out).toContain('dirty');
     expect(out).toContain('↑2');
-    expect(out).toContain('[x] b');
-    expect(out).toContain('[ ] a');
+    expect(out).toContain('◉ b');
+    expect(out).toContain('○ a');
   });
 
   it('empty projects list renders no rows (no project names)', () => {
@@ -57,9 +57,9 @@ describe('Projects panel', () => {
     const out = lastFrame() ?? '';
     // Panel title should still be there
     expect(out).toContain('Projects');
-    // No project names like '[ ]' checkboxes
-    expect(out).not.toContain('[ ]');
-    expect(out).not.toContain('[x]');
+    // No project names like '○' or '◉' markers
+    expect(out).not.toContain('○');
+    expect(out).not.toContain('◉');
   });
 
   it('single project clean shows clean badge', () => {
@@ -77,7 +77,7 @@ describe('Projects panel', () => {
     const out = lastFrame() ?? '';
     expect(out).toContain('myrepo');
     expect(out).toContain('clean');
-    expect(out).toContain('[ ] myrepo');
+    expect(out).toContain('○ myrepo');
   });
 
   it('single project dirty shows dirty badge', () => {
@@ -141,7 +141,7 @@ describe('Projects panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('⚠missing');
+    expect(out).toContain('⚠ missing');
   });
 
   it('project with missing status entry shows ... (loading) badge', () => {
@@ -157,7 +157,7 @@ describe('Projects panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('...');
+    expect(out).toContain('…');
   });
 
   it('multi-select: selected set shows [x] for selected items', () => {
@@ -174,9 +174,9 @@ describe('Projects panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('[x] a');
-    expect(out).toContain('[ ] b');
-    expect(out).toContain('[x] c');
+    expect(out).toContain('◉ a');
+    expect(out).toContain('○ b');
+    expect(out).toContain('◉ c');
   });
 
   it('cursor row renders differently (green in terminal)', () => {
@@ -199,8 +199,8 @@ describe('Projects panel', () => {
     // Both names should appear
     expect(out).toContain('cur');
     expect(out).toContain('other');
-    // The cursor project checkbox should appear
-    expect(out).toContain('[ ] cur');
+    // The cursor project marker should appear (❯ for cursor row)
+    expect(out).toContain('❯ ○ cur');
   });
 
   it('combined dirty + ahead + behind: all badges present', () => {
@@ -347,9 +347,9 @@ describe('Projects panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('[x] x1');
-    expect(out).toContain('[x] x2');
-    expect(out).toContain('[x] x3');
+    expect(out).toContain('◉ x1');
+    expect(out).toContain('◉ x2');
+    expect(out).toContain('◉ x3');
   });
 
   it('none-selected: all rows show [ ]', () => {
@@ -366,9 +366,9 @@ describe('Projects panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('[ ] n1');
-    expect(out).toContain('[ ] n2');
-    expect(out).not.toContain('[x]');
+    expect(out).toContain('○ n1');
+    expect(out).toContain('○ n2');
+    expect(out).not.toContain('◉');
   });
 
   it('project with exists=false overrides other badges (shows ⚠missing only)', () => {
@@ -385,6 +385,6 @@ describe('Projects panel', () => {
     );
     const out = lastFrame() ?? '';
     // exists=false takes priority in badgeFor
-    expect(out).toContain('⚠missing');
+    expect(out).toContain('⚠ missing');
   });
 });

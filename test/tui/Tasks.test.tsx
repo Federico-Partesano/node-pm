@@ -73,14 +73,14 @@ describe('Tasks panel', () => {
     expect(out).toContain('████████████');
   });
 
-  it('running task with no progress (undefined) shows "..." marker', () => {
+  it('running task with no progress (undefined) shows "…" marker', () => {
     const { lastFrame } = render(
       <Tasks tasks={[
         { name: 'noprog:task', status: 'running' },
       ]} />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('...');
+    expect(out).toContain('…');
     expect(out).toContain('noprog:task');
   });
 
@@ -177,16 +177,16 @@ describe('Tasks panel', () => {
     expect(out).toContain('Tasks');
   });
 
-  it('running task with progress but undefined percent shows "..." and ░-bar', () => {
+  it('running task with progress but undefined percent shows "…" and ···-bar', () => {
     const { lastFrame } = render(
       <Tasks tasks={[
         { name: 'nopct:task', status: 'running', progress: { phase: 'clone' } },
       ]} />,
     );
     const out = lastFrame() ?? '';
-    // percent is undefined → '...' marker
-    expect(out).toContain('...');
-    // bar uses -1 fill path → all ░
-    expect(out).toContain('░');
+    // percent is undefined → '…' marker
+    expect(out).toContain('…');
+    // bar uses -1 fill path → all ·
+    expect(out).toContain('·');
   });
 });

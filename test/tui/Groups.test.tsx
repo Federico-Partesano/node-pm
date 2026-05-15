@@ -74,11 +74,11 @@ describe('Groups panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    // The '>' marker should appear before 'second' on the same line
+    // The '❯' marker should appear before 'second' on the same line
     const lines = out.split('\n');
     const selectedLine = lines.find((l) => l.includes('second'));
     expect(selectedLine).toBeDefined();
-    expect(selectedLine!).toContain('>');
+    expect(selectedLine!).toContain('❯');
   });
 
   it('non-selected groups do not have the selection marker', () => {
@@ -97,8 +97,8 @@ describe('Groups panel', () => {
     const lines = out.split('\n');
     const otherLine = lines.find((l) => l.includes('other-one'));
     expect(otherLine).toBeDefined();
-    // The unselected line should NOT start with '>'
-    expect(otherLine!.trimStart()).not.toMatch(/^>/);
+    // The unselected line should NOT start with '❯'
+    expect(otherLine!.trimStart()).not.toMatch(/^❯/);
   });
 
   it('empty groups array renders header only (Groups title)', () => {
@@ -131,7 +131,7 @@ describe('Groups panel', () => {
     const out = lastFrame() ?? '';
     expect(out).toContain('only-group');
     expect(out).toContain('5');
-    expect(out).toContain('>');
+    expect(out).toContain('❯');
   });
 
   it('renders group with count=0', () => {
