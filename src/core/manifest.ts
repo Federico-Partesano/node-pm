@@ -63,16 +63,17 @@ export class ManifestStore {
 
   async addProject(p: Project): Promise<void> {
     const m = await this.load();
-    const idx = m.projects.findIndex((x) => x.name === p.name && x.group === p.group);
-    if (idx >= 0) m.projects[idx] = p;
-    else m.projects.push(p);
-    await this.save(m);
+    const next: Manifest = { ...m, projects: m.projects.slice() };
+    const idx = next.projects.findIndex((x) => x.name === p.name && x.group === p.group);
+    if (idx >= 0) next.projects[idx] = p;
+    else next.projects.push(p);
+    await this.save(next);
   }
 
   async removeProject(name: string, group: string): Promise<void> {
     const m = await this.load();
-    m.projects = m.projects.filter((p) => !(p.name === name && p.group === group));
-    await this.save(m);
+    const next: Manifest = { ...m, projects: m.projects.filter((p) => !(p.name === name && p.group === group)) };
+    await this.save(next);
   }
 
   async list(filter?: { group?: string; tag?: string }): Promise<Project[]> {

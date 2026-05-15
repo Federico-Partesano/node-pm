@@ -9,18 +9,22 @@ const SERVICE = 'node-pm';
 const ACCOUNT = 'github-token';
 
 export class GistSync {
-  private entry = new Entry(SERVICE, ACCOUNT);
+  private _entry: Entry | null = null;
+  private getEntry(): Entry {
+    if (!this._entry) this._entry = new Entry(SERVICE, ACCOUNT);
+    return this._entry;
+  }
 
   async getToken(): Promise<string | null> {
     try {
-      return this.entry.getPassword();
+      return this.getEntry().getPassword();
     } catch {
       return null;
     }
   }
 
   async setToken(token: string): Promise<void> {
-    this.entry.setPassword(token);
+    this.getEntry().setPassword(token);
   }
 
   async push(manifest: Manifest, fallbackPath?: string): Promise<{ gistId: string; url: string }> {
