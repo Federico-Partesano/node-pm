@@ -54,5 +54,6 @@ export type RunHandle = {
   exitCode: number | null;
   onStdout: (cb: (line: string) => void) => () => void;
   onStderr: (cb: (line: string) => void) => () => void;
+  wait: () => Promise<number>;
   kill: () => void;
 };

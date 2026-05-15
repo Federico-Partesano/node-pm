@@ -18,6 +18,10 @@ export class ScriptRunner {
 
     const stdoutCbs = new Set<(l: string) => void>();
     const stderrCbs = new Set<(l: string) => void>();
+
+    let resolveWait!: (code: number) => void;
+    const waitPromise = new Promise<number>((r) => { resolveWait = r; });
+
     const handle: RunHandle = {
       id: randomUUID(),
       project,
@@ -26,6 +30,7 @@ export class ScriptRunner {
       exitCode: null,
       onStdout(cb) { stdoutCbs.add(cb); return () => { stdoutCbs.delete(cb); }; },
       onStderr(cb) { stderrCbs.add(cb); return () => { stderrCbs.delete(cb); }; },
+      wait: () => waitPromise,
       kill() {
         handle.status = 'killed';
         (proc as unknown as { kill: (sig?: string) => void }).kill('SIGTERM');
@@ -42,6 +47,13 @@ export class ScriptRunner {
     void (proc as unknown as Promise<{ exitCode: number }>).then((res) => {
       handle.exitCode = res.exitCode;
       if (handle.status === 'running') handle.status = 'exited';
+      resolveWait(res.exitCode);
+    }).catch((err) => {
+      // spawn failure (e.g., ENOENT) — mark exited and resolve with non-zero
+      handle.exitCode = 127;
+      handle.status = 'exited';
+      resolveWait(127);
+      void err;
     });
 
     return handle;

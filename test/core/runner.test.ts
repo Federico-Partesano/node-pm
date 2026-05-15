@@ -32,6 +32,8 @@ describe('ScriptRunner', () => {
     fakeProc.stdout.write('world\n');
     await new Promise((r) => setTimeout(r, 5));
     expect(lines).toEqual(['hello', 'world']);
+    const code = await handle.wait();
+    expect(code).toBe(0);
     handle.kill();
     expect(handle.status).toBe('killed');
   });

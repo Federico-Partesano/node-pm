@@ -19,12 +19,7 @@ export function registerRun(program: Command): void {
         const handle = await runner.spawn(p, script, store.resolvePath(p));
         handle.onStdout((l) => console.log(`[${p.name}] ${l}`));
         handle.onStderr((l) => console.error(`[${p.name}] ${l}`));
-        await new Promise<void>((resolve) => {
-          if (handle.status !== 'running') return resolve();
-          const i = setInterval(() => {
-            if (handle.status !== 'running') { clearInterval(i); resolve(); }
-          }, 50);
-        });
+        await handle.wait();
         if (handle.exitCode !== 0) fail++;
       }
       if (fail > 0) process.exitCode = 2;
