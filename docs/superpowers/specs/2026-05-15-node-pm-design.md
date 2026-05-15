@@ -43,9 +43,11 @@ Both surfaces share a single core engine.
 - **GitHub API:** octokit.
 - **Secrets:** keytar (OS keychain).
 - **FS atomic write:** write-file-atomic.
+- **Path resolution:** `env-paths` for app config dir; `platform-folders` for the user's Documents folder (default project root).
 - **Tests:** Vitest + ink-testing-library + memfs.
 - **Build:** tsup (single ESM bundle with shebang).
 - **CI:** GitHub Actions; release via changesets.
+- **Target platforms:** Linux (primary), macOS, Windows. All features cross-platform.
 
 ## Architecture
 
@@ -118,7 +120,11 @@ class TaskQueue extends EventEmitter {
 
 ## Manifest schema
 
-Location: `$XDG_CONFIG_HOME/node-pm/projects.json` (default `~/.config/node-pm/projects.json`).
+Location resolved via `env-paths('node-pm')`:
+
+- **Linux:** `~/.config/node-pm/projects.json` (respects `$XDG_CONFIG_HOME`).
+- **macOS:** `~/Library/Preferences/node-pm/projects.json`.
+- **Windows:** `%APPDATA%\node-pm\Config\projects.json`.
 
 ```json
 {
@@ -153,7 +159,13 @@ Rules:
 
 ## Filesystem layout
 
-Single configurable root (default `~/documents/projects`). Projects live two levels deep:
+Single configurable root. Default resolved via `platform-folders.getDocumentsFolder()` + `/projects`:
+
+- **Linux:** `~/Documents/projects` (respects `xdg-user-dirs` if configured, e.g. `~/documenti/projects`).
+- **macOS:** `~/Documents/projects`.
+- **Windows:** `%USERPROFILE%\Documents\projects`.
+
+User can override via `pm config set root <path>`. Projects live two levels deep:
 
 ```
 <root>/<group>/<repo>/
@@ -161,6 +173,8 @@ e.g. ~/documents/projects/PERSONALE/repo-blessed/
 ```
 
 `group` is the parent directory name. Scanner derives it from the path; clone uses `<root>/<group>/<name>` as destination.
+
+All path operations use `path.join` and `path.sep` — never hardcoded `/`. Tilde expansion via `os.homedir()`.
 
 ## CLI surface
 
@@ -308,7 +322,8 @@ vitest.config.ts
 - **Unit (core):** Vitest with `memfs` for fs and `simple-git` mocked. Coverage target ≥ 80%.
 - **TUI:** `ink-testing-library` for snapshot + interaction tests on each panel and the App composition.
 - **CLI integration:** spawn the built binary with `execa` against a temp directory containing fixture repos. Coverage target ≥ 60% UI.
-- **CI matrix:** Node 20 + Node 22 on Ubuntu (Linux-first; macOS later).
+- **CI matrix:** Node 20 + Node 22 on Ubuntu, macOS, Windows. All platforms must pass before release.
+- **Cross-platform tests:** path handling (separators, casing), keychain (keytar mocked in CI), TUI rendering (basic smoke on Windows Terminal).
 
 ## Distribution
 
@@ -317,9 +332,16 @@ vitest.config.ts
 - Install: `npm i -g @<user>/node-pm`.
 - Versioning + changelog: changesets, with release workflow on tag push.
 
+## Cross-platform considerations
+
+- **Git availability:** assumed installed and on `PATH`. On Windows, recommend Git for Windows; SSH keys must be configured.
+- **Keychain:** keytar uses libsecret (Linux), Keychain (macOS), Credential Manager (Windows). Linux requires `gnome-keyring` or equivalent — fallback to plaintext config with explicit warning if unavailable.
+- **Process spawning:** execa handles `.cmd`/`.bat` shims on Windows automatically.
+- **Path casing:** macOS HFS+ and Windows NTFS are case-insensitive; manifest comparisons normalize lowercase.
+- **Terminal capabilities:** TUI requires a 256-color terminal supporting box-drawing chars. Windows Terminal / iTerm2 / GNOME Terminal all OK. Legacy `cmd.exe` is not supported (warn on startup if `TERM` is too limited).
+
 ## Open questions for user review
 
 1. npm scope/package name — to be decided before first publish.
 2. Repo name on disk — keep `repo-blessed` as the working dir, or rename to `node-pm`?
-3. macOS / Windows support priority — Linux-first is assumed; confirm.
-4. Telemetry — none planned. Confirm.
+3. Telemetry — none planned. Confirm.
