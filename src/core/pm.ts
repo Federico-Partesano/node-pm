@@ -8,7 +8,8 @@ import { PMError } from '../shared/errors.js';
 const lockMap: Array<[string, PMName]> = [
   ['pnpm-lock.yaml', 'pnpm'],
   ['yarn.lock', 'yarn'],
-  ['bun.lockb', 'bun'],
+  ['bun.lock', 'bun'],     // Bun 1.2+ default (text)
+  ['bun.lockb', 'bun'],    // legacy binary
   ['package-lock.json', 'npm'],
 ];
 

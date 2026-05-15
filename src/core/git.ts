@@ -9,7 +9,7 @@ export type PullResult = { changes: number; insertions: number; deletions: numbe
 
 export class GitOps {
   async *clone(url: string, dest: string): AsyncIterable<Progress> {
-    const proc = execa('git', ['clone', '--progress', url, dest], { stderr: 'pipe' });
+    const proc = execa('git', ['clone', '--progress', '--', url, dest], { stderr: 'pipe' });
     if (!proc.stderr) throw new GitError('git clone has no stderr', 'E_GIT_CLONE');
     const rl = readline.createInterface({ input: proc.stderr });
     const queue: Progress[] = [];

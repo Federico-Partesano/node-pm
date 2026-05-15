@@ -31,6 +31,10 @@ describe('PackageManager', () => {
     vol.fromJSON({ '/p/yarn.lock': 'x' });
     expect(await new PackageManager().detect('/p')).toBe('yarn');
   });
+  it('detects bun via bun.lock (1.2+)', async () => {
+    vol.fromJSON({ '/p/bun.lock': 'x' });
+    expect(await new PackageManager().detect('/p')).toBe('bun');
+  });
   it('detects bun', async () => {
     vol.fromJSON({ '/p/bun.lockb': 'x' });
     expect(await new PackageManager().detect('/p')).toBe('bun');
