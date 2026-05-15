@@ -15,6 +15,9 @@ import { Projects } from './panels/Projects.js';
 import { Detail } from './panels/Detail.js';
 import { Tasks } from './panels/Tasks.js';
 import { Logs } from './panels/Logs.js';
+import { Header } from './components/Header.js';
+import { Footer } from './components/Footer.js';
+import { EmptyState } from './components/EmptyState.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
@@ -74,20 +77,66 @@ export function App() {
     },
   });
 
-  if (loading) return <Text>loading manifest...</Text>;
+  if (loading) {
+    return (
+      <Box paddingX={2} paddingY={1}>
+        <Text color="cyan">Loading manifest…</Text>
+      </Box>
+    );
+  }
+
+  const isEmpty = projects.length === 0;
+  const root = manifest?.root ?? '~/Documents/projects';
 
   return (
     <Box flexDirection="column">
-      <Box>
-        <Box width="20%"><Groups groups={groupSummaries} selected={activeGroup ?? ''} focused={panel === 'groups'} onSelect={(n) => { setActiveGroup(n); setCursor(null); }} /></Box>
-        <Box width="45%"><Projects projects={visible} statusByName={statusByName} selected={selected} cursor={cursor} focused={panel === 'projects'} onCursor={setCursor} onToggle={state.toggleSelected} /></Box>
-        <Box width="35%"><Detail project={cur} path={curPath} pmName={pmName} /></Box>
-      </Box>
-      <Box>
-        <Box width="60%"><Tasks tasks={tasks} /></Box>
-        <Box width="40%"><Logs tabs={logs} activeId={activeLog} /></Box>
-      </Box>
-      <Text dimColor>[?]help [tab]panel [space]select [a]all [p]pull [c]clone [i]install [r]run [q]quit</Text>
+      <Header
+        root={root}
+        totalProjects={projects.length}
+        totalGroups={groupSummaries.length}
+        activeGroup={activeGroup}
+      />
+
+      {isEmpty ? (
+        <EmptyState root={root} />
+      ) : (
+        <>
+          <Box>
+            <Box flexGrow={1} flexBasis={0} minWidth={18}>
+              <Groups
+                groups={groupSummaries}
+                selected={activeGroup ?? ''}
+                focused={panel === 'groups'}
+                onSelect={(n) => { setActiveGroup(n); setCursor(null); }}
+              />
+            </Box>
+            <Box flexGrow={2} flexBasis={0} minWidth={32}>
+              <Projects
+                projects={visible}
+                statusByName={statusByName}
+                selected={selected}
+                cursor={cursor}
+                focused={panel === 'projects'}
+                onCursor={setCursor}
+                onToggle={state.toggleSelected}
+              />
+            </Box>
+            <Box flexGrow={2} flexBasis={0} minWidth={32}>
+              <Detail project={cur} path={curPath} pmName={pmName} />
+            </Box>
+          </Box>
+          <Box>
+            <Box flexGrow={3} flexBasis={0}>
+              <Tasks tasks={tasks} />
+            </Box>
+            <Box flexGrow={2} flexBasis={0}>
+              <Logs tabs={logs} activeId={activeLog} />
+            </Box>
+          </Box>
+        </>
+      )}
+
+      <Footer />
     </Box>
   );
 }

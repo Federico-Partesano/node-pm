@@ -1,29 +1,59 @@
 import React from 'react';
-import { Text } from 'ink';
+import { Box, Text } from 'ink';
 import type { QueueTask } from '../hooks/useQueue.js';
 import { Panel } from '../components/Panel.js';
 
 export function Tasks({ tasks }: { tasks: QueueTask[] }) {
+  const running = tasks.filter((t) => t.status === 'running').length;
+  const done = tasks.filter((t) => t.status === 'done').length;
+  const failed = tasks.filter((t) => t.status === 'error').length;
+  const subtitle = tasks.length === 0
+    ? 'idle'
+    : `${running} running · ${done} done · ${failed} failed`;
   return (
-    <Panel title="Tasks">
-      {tasks.length === 0 && <Text dimColor>idle</Text>}
+    <Panel title="Tasks" subtitle={subtitle} accent="yellow">
+      {tasks.length === 0 && <Text dimColor>No tasks queued.</Text>}
       {tasks.map((t) => {
         if (t.status === 'running') {
           const pct = t.progress?.percent;
-          const bar = renderBar(pct ?? -1);
-          return <Text key={t.name}>▶ {t.name.padEnd(20)} {bar} {pct !== undefined ? `${pct}%` : '...'}</Text>;
+          return (
+            <Box key={t.name}>
+              <Text color="yellow">▶ </Text>
+              <Text>{t.name.padEnd(22)} </Text>
+              <ProgressBar percent={pct ?? -1} />
+              <Text dimColor> {pct !== undefined ? `${pct}%` : '…'}</Text>
+            </Box>
+          );
         }
         if (t.status === 'done') {
-          return <Text key={t.name} color="green">✓ {t.name}</Text>;
+          return (
+            <Box key={t.name}>
+              <Text color="green">✓ </Text>
+              <Text>{t.name}</Text>
+            </Box>
+          );
         }
-        return <Text key={t.name} color="red">✗ {t.name} — {(t.error as Error)?.message ?? 'error'}</Text>;
+        return (
+          <Box key={t.name}>
+            <Text color="red">✗ </Text>
+            <Text>{t.name} </Text>
+            <Text dimColor>— {(t.error as Error)?.message ?? 'error'}</Text>
+          </Box>
+        );
       })}
     </Panel>
   );
 }
 
-function renderBar(percent: number, width = 12): string {
-  if (percent < 0) return '░'.repeat(width);
+function ProgressBar({ percent, width = 14 }: { percent: number; width?: number }) {
+  if (percent < 0) {
+    return <Text dimColor>{'·'.repeat(width)}</Text>;
+  }
   const filled = Math.round((percent / 100) * width);
-  return '█'.repeat(filled) + '░'.repeat(width - filled);
+  return (
+    <Text>
+      <Text color="green">{'█'.repeat(filled)}</Text>
+      <Text dimColor>{'░'.repeat(width - filled)}</Text>
+    </Text>
+  );
 }

@@ -12,20 +12,36 @@ type Props = {
 export function Detail({ project, path, pmName }: Props) {
   if (!project) {
     return (
-      <Box borderStyle="round" borderColor="gray" paddingX={1}>
+      <Panel title="Detail" accent="green">
         <Text dimColor>No project selected</Text>
-      </Box>
+      </Panel>
     );
   }
   return (
-    <Panel title={`${project.group}/${project.name}`}>
-      <Text>Path:   {path ?? '-'}</Text>
-      <Text>Remote: {project.url}</Text>
-      <Text>PM:     {pmName ?? '-'}</Text>
-      <Text bold>Scripts:</Text>
+    <Panel title="Detail" subtitle={`${project.group}/${project.name}`} accent="green">
+      <Field label="Remote" value={project.url} color="white" />
+      <Field label="Path  " value={path ?? '—'} color="white" />
+      <Field label="Branch" value={project.defaultBranch ?? '—'} color="cyan" />
+      <Field label="PM    " value={pmName ?? '—'} color="yellow" />
+      <Box marginTop={1}>
+        <Text bold dimColor>Favorite scripts</Text>
+      </Box>
+      {(project.scripts?.favorites ?? []).length === 0 && (
+        <Text dimColor>  none</Text>
+      )}
       {(project.scripts?.favorites ?? []).map((s) => (
-        <Text key={s}>  • {s}</Text>
+        <Text key={s}>  <Text color="cyan">▸</Text> {s}</Text>
       ))}
     </Panel>
+  );
+}
+
+type FieldProps = { label: string; value: string; color?: string };
+function Field({ label, value, color }: FieldProps) {
+  return (
+    <Box>
+      <Text dimColor>{label} </Text>
+      <Text color={color}>{value}</Text>
+    </Box>
   );
 }

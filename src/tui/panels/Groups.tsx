@@ -12,20 +12,25 @@ type Props = {
 };
 
 export function Groups({ groups, selected, focused, onSelect }: Props) {
-  useInput((_input, key) => {
+  useInput((input, key) => {
     if (!focused) return;
     const idx = groups.findIndex((g) => g.name === selected);
-    if (key.upArrow && idx > 0) onSelect(groups[idx - 1]!.name);
-    if (key.downArrow && idx < groups.length - 1) onSelect(groups[idx + 1]!.name);
+    const up = key.upArrow || input === 'k';
+    const down = key.downArrow || input === 'j';
+    if (up && idx > 0) onSelect(groups[idx - 1]!.name);
+    if (down && idx < groups.length - 1) onSelect(groups[idx + 1]!.name);
   }, { isActive: focused });
 
   return (
-    <Panel title="Groups" focused={focused}>
+    <Panel title="Groups" subtitle={`${groups.length}`} focused={focused} accent="magenta">
+      {groups.length === 0 && <Text dimColor>none</Text>}
       {groups.map((g) => {
         const sel = g.name === selected;
         return (
-          <Text key={g.name} color={sel ? 'green' : undefined}>
-            {sel ? '> ' : '  '}{g.name.padEnd(12)} {g.count}
+          <Text key={g.name}>
+            <Text color={sel ? 'green' : 'gray'}>{sel ? '❯ ' : '  '}</Text>
+            <Text color={sel ? 'greenBright' : undefined} bold={sel}>{g.name}</Text>
+            <Text dimColor>  ({g.count})</Text>
           </Text>
         );
       })}
