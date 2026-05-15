@@ -18,7 +18,18 @@ export function RootStep({ root, onChange, onSubmit, error }: Props) {
         <TextInput value={root} onChange={onChange} onSubmit={onSubmit} />
       </Box>
       <Box marginTop={1}><Text dimColor>Enter to scan · Esc to dismiss</Text></Box>
-      {error && <Box marginTop={1}><Text color="red">Error: {error}</Text></Box>}
+      <Box marginTop={1}>
+        <Text dimColor>Tip: paths are case-sensitive on Linux. Use </Text>
+        <Text color="cyan">~/Documents/projects</Text>
+        <Text dimColor> or an absolute path.</Text>
+      </Box>
+      {error && (
+        <Box marginTop={1} flexDirection="column">
+          {error.split('\n').map((line, i) => (
+            <Text key={i} color="red">{line}</Text>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 }

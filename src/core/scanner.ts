@@ -16,7 +16,17 @@ export class ProjectScanner {
     try {
       groups = await fs.readdir(root);
     } catch (err) {
-      throw new ScannerError(`Cannot read root ${root}`, 'E_SCAN_ROOT', err as Error);
+      const code = (err as NodeJS.ErrnoException).code;
+      const reason =
+        code === 'ENOENT' ? 'directory does not exist'
+        : code === 'EACCES' ? 'permission denied'
+        : code === 'ENOTDIR' ? 'path is a file, not a directory'
+        : (err as Error).message;
+      throw new ScannerError(
+        `Cannot scan root: ${reason}\n  path: ${root}`,
+        'E_SCAN_ROOT',
+        err as Error,
+      );
     }
     for (const group of groups) {
       const groupPath = path.join(root, group);

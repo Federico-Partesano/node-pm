@@ -1,5 +1,6 @@
 import path from 'node:path';
 import os from 'node:os';
+import nodefs from 'node:fs';
 import envPaths from 'env-paths';
 import { getDocumentsFolder } from 'platform-folders';
 import type { Project } from './types.js';
@@ -16,6 +17,30 @@ export function getManifestPath(): string {
 
 export function getDefaultRoot(): string {
   return path.join(getDocumentsFolder(), 'projects');
+}
+
+/**
+ * Like getDefaultRoot, but if that path doesn't exist, fall back to
+ * common alternatives that often do (lowercase 'documents', '~/projects',
+ * '~/dev', '~/code'). Returns the first existing directory or the original
+ * default if none exist.
+ */
+export function getBestRoot(): string {
+  const candidates = [
+    getDefaultRoot(),
+    path.join(os.homedir(), 'documents', 'projects'),
+    path.join(os.homedir(), 'projects'),
+    path.join(os.homedir(), 'dev'),
+    path.join(os.homedir(), 'code'),
+  ];
+  for (const c of candidates) {
+    try {
+      if (nodefs.statSync(c).isDirectory()) return c;
+    } catch {
+      // skip
+    }
+  }
+  return getDefaultRoot();
 }
 
 export function expandHome(p: string): string {
