@@ -8,6 +8,9 @@ import { registerClone } from './commands/clone.js';
 import { registerPull } from './commands/pull.js';
 import { registerStatus } from './commands/status.js';
 import { registerInstall } from './commands/install.js';
+import { registerRun } from './commands/run.js';
+import { registerSync } from './commands/sync.js';
+import { registerConfig } from './commands/config.js';
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -22,5 +25,8 @@ export async function runCli(argv: string[]): Promise<void> {
   registerPull(program);
   registerStatus(program);
   registerInstall(program);
+  registerRun(program);
+  registerSync(program);
+  registerConfig(program);
   await program.parseAsync(argv);
 }
