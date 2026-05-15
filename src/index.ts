@@ -12,7 +12,14 @@ async function main() {
   await runCli(argv);
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
+  const code = (err as { code?: string }).code;
+  if (code === 'commander.helpDisplayed' || code === 'commander.version') {
+    process.exit(0);
+  }
+  if (code === 'commander.help') {
+    process.exit(0);
+  }
   console.error(err);
   process.exit(1);
 });
