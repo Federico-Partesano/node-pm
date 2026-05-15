@@ -9,6 +9,23 @@ export type PullResult = { changes: number; insertions: number; deletions: numbe
 
 export class GitOps {
   async *clone(url: string, dest: string): AsyncIterable<Progress> {
+    // Idempotency: skip if dest already contains a git repo
+    const existingGit = await fs.stat(`${dest}/.git`).catch(() => null);
+    if (existingGit?.isDirectory()) {
+      yield { phase: 'cloning', percent: 100, message: `already cloned, skipping ${dest}` };
+      return;
+    }
+    // Refuse to clone over a non-empty, non-git directory
+    const stats = await fs.stat(dest).catch(() => null);
+    if (stats?.isDirectory()) {
+      const entries = await fs.readdir(dest).catch(() => [] as string[]);
+      if (entries.length > 0) {
+        throw new GitError(
+          `Destination is non-empty and not a git repo: ${dest}`,
+          'E_GIT_CLONE_DEST_DIRTY',
+        );
+      }
+    }
     const proc = execa('git', ['clone', '--progress', '--', url, dest], { stderr: 'pipe' });
     if (!proc.stderr) throw new GitError('git clone has no stderr', 'E_GIT_CLONE');
     const rl = readline.createInterface({ input: proc.stderr });

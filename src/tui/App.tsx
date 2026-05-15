@@ -22,6 +22,7 @@ import { Footer } from './components/Footer.js';
 import { EmptyState } from './components/EmptyState.js';
 import { OnboardingWizard } from './components/OnboardingWizard.js';
 import { AddProjectForm } from './components/AddProjectForm.js';
+import { BulkCloneForm, type ParsedEntry } from './components/BulkCloneForm.js';
 import { DebugBar } from './components/DebugBar.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
@@ -33,7 +34,7 @@ import type { GitStatus } from '../shared/types.js';
 type EmptyMode = 'wizard' | 'help';
 
 export function App() {
-  const { manifest, projects, loading, reload } = useManifest();
+  const { manifest, projects, loading, reload, store } = useManifest();
   const git = useMemo(() => new GitOps(), []);
   const pm = useMemo(() => new PackageManager(), []);
   const runner = useMemo(() => new ScriptRunner(), []);
@@ -44,6 +45,7 @@ export function App() {
   const state = useAppState();
   const { activeGroup, setActiveGroup, cursor, setCursor, selected, panel } = state;
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showBulkClone, setShowBulkClone] = useState(false);
   const [emptyMode, setEmptyMode] = useState<EmptyMode>('wizard');
 
   useEffect(() => {
@@ -96,7 +98,7 @@ export function App() {
   });
 
   useAppKeys({
-    enabled: !!manifest && !isEmpty && !showAddForm,
+    enabled: !!manifest && !isEmpty && !showAddForm && !showBulkClone,
     onTab: state.nextPanel,
     onSelectAll: () => state.selectAll(visible.map((p) => p.name)),
     onClearSelection: state.clearSelection,
@@ -108,9 +110,20 @@ export function App() {
       if (cur && fav && curPath) void runScript(cur, fav, curPath);
     },
     onAddProject: () => setShowAddForm(true),
-    onCloneAll: bulk.cloneAll,
+    onCloneAll: () => setShowBulkClone(true),
     onExport: () => { void snapshot.exportSnapshot(); },
   });
+
+  const handleBulkClone = async (entries: ParsedEntry[]) => {
+    setShowBulkClone(false);
+    for (const e of entries) {
+      const project = { name: e.name, group: e.group, url: e.url };
+      await store.addProject(project);
+      const dest = resolvePath(project);
+      void queue.add(`clone:${e.group}/${e.name}`, () => git.clone(e.url, dest));
+    }
+    await reload();
+  };
 
   if (loading) {
     return (
@@ -184,6 +197,13 @@ export function App() {
             <AddProjectForm
               onDone={() => { setShowAddForm(false); void reload(); }}
               onCancel={() => setShowAddForm(false)}
+            />
+          )}
+          {showBulkClone && (
+            <BulkCloneForm
+              defaultGroup={activeGroup ?? 'OSS'}
+              onSubmit={(entries) => { void handleBulkClone(entries); }}
+              onCancel={() => setShowBulkClone(false)}
             />
           )}
         </Box>
