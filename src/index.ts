@@ -11,7 +11,18 @@ async function main() {
       console.error('Try running directly: node dist/index.js');
       process.exit(1);
     }
-    render(React.createElement(App), { stdin: process.stdin, stdout: process.stdout });
+    // Enter alternate screen buffer + clear + cursor home
+    process.stdout.write('\x1b[?1049h\x1b[2J\x1b[H');
+    const restore = () => process.stdout.write('\x1b[?1049l');
+    process.on('exit', restore);
+    process.on('SIGINT', () => { restore(); process.exit(130); });
+    process.on('SIGTERM', () => { restore(); process.exit(143); });
+    const instance = render(React.createElement(App), {
+      stdin: process.stdin,
+      stdout: process.stdout,
+      exitOnCtrlC: true,
+    });
+    await instance.waitUntilExit();
     return;
   }
   await runCli(argv);

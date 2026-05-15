@@ -10,6 +10,7 @@ import { usePmDetect } from './hooks/usePmDetect.js';
 import { useScriptLogs } from './hooks/useScriptLogs.js';
 import { useBulkActions } from './hooks/useBulkActions.js';
 import { useAppKeys } from './hooks/useAppKeys.js';
+import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { Groups } from './panels/Groups.js';
 import { Projects } from './panels/Projects.js';
 import { Detail } from './panels/Detail.js';
@@ -70,6 +71,7 @@ export function App() {
   const { logs, activeLog, runScript } = useScriptLogs(runner);
   const selectedProjects = visible.filter((p) => selected.has(p.name));
   const bulk = useBulkActions({ queue, git, pm, selectedProjects, pathByName });
+  const { cols, rows } = useTerminalSize();
 
   const isEmpty = projects.length === 0;
 
@@ -99,7 +101,7 @@ export function App() {
 
   if (loading) {
     return (
-      <Box paddingX={2} paddingY={1}>
+      <Box width={cols} height={rows} paddingX={2} paddingY={1}>
         <Text color="cyan">Loading manifest…</Text>
       </Box>
     );
@@ -108,7 +110,7 @@ export function App() {
   const root = manifest?.root && pathExists(manifest.root) ? manifest.root : getBestRoot();
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" width={cols} height={rows}>
       <Header
         root={root}
         totalProjects={projects.length}
@@ -132,8 +134,8 @@ export function App() {
           <EmptyState root={root} />
         )
       ) : (
-        <>
-          <Box>
+        <Box flexDirection="column" flexGrow={1}>
+          <Box flexGrow={2} flexBasis={0}>
             <Box flexGrow={1} flexBasis={0} minWidth={18}>
               <Groups
                 groups={groupSummaries}
@@ -157,7 +159,7 @@ export function App() {
               <Detail project={cur} path={curPath} pmName={pmName} />
             </Box>
           </Box>
-          <Box>
+          <Box flexGrow={1} flexBasis={0}>
             <Box flexGrow={3} flexBasis={0}>
               <Tasks tasks={tasks} />
             </Box>
@@ -171,7 +173,7 @@ export function App() {
               onCancel={() => setShowAddForm(false)}
             />
           )}
-        </>
+        </Box>
       )}
 
       <Footer />
