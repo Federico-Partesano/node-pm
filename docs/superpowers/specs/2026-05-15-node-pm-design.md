@@ -340,8 +340,8 @@ vitest.config.ts
 - **Path casing:** macOS HFS+ and Windows NTFS are case-insensitive; manifest comparisons normalize lowercase.
 - **Terminal capabilities:** TUI requires a 256-color terminal supporting box-drawing chars. Windows Terminal / iTerm2 / GNOME Terminal all OK. Legacy `cmd.exe` is not supported (warn on startup if `TERM` is too limited).
 
-## Open questions for user review
+## Resolved decisions
 
-1. npm scope/package name — to be decided before first publish.
-2. Repo name on disk — keep `repo-blessed` as the working dir, or rename to `node-pm`?
-3. Telemetry — none planned. Confirm.
+- **npm package name:** `node-pm` (unscoped). If unavailable at publish time, fall back to `@<user>/node-pm`.
+- **Repo directory name:** the on-disk repo directory will be `node-pm`. The current `repo-blessed` directory is renamed by the user post-init (`mv repo-blessed node-pm`).
+- **Telemetry:** none. The tool never phones home.
