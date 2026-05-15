@@ -43,6 +43,14 @@ export function getBestRoot(): string {
   return getDefaultRoot();
 }
 
+export function pathExists(p: string): boolean {
+  try {
+    return nodefs.statSync(expandHome(p)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export function expandHome(p: string): string {
   if (p === '~') return os.homedir();
   if (p.startsWith('~/') || p.startsWith('~\\')) {

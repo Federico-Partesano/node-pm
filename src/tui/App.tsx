@@ -25,7 +25,7 @@ import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
 import { ScriptRunner } from '../core/runner.js';
-import { getBestRoot } from '../shared/paths.js';
+import { getBestRoot, pathExists } from '../shared/paths.js';
 import type { GitStatus } from '../shared/types.js';
 
 type EmptyMode = 'wizard' | 'help';
@@ -105,7 +105,7 @@ export function App() {
     );
   }
 
-  const root = manifest?.root ?? getBestRoot();
+  const root = manifest?.root && pathExists(manifest.root) ? manifest.root : getBestRoot();
 
   return (
     <Box flexDirection="column">
