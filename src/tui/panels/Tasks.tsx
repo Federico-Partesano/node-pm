@@ -1,11 +1,11 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Text } from 'ink';
 import type { QueueTask } from '../hooks/useQueue.js';
+import { Panel } from '../components/Panel.js';
 
 export function Tasks({ tasks }: { tasks: QueueTask[] }) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1}>
-      <Text bold color="cyan">Tasks</Text>
+    <Panel title="Tasks">
       {tasks.length === 0 && <Text dimColor>idle</Text>}
       {tasks.map((t) => {
         if (t.status === 'running') {
@@ -18,7 +18,7 @@ export function Tasks({ tasks }: { tasks: QueueTask[] }) {
         }
         return <Text key={t.name} color="red">✗ {t.name} — {(t.error as Error)?.message ?? 'error'}</Text>;
       })}
-    </Box>
+    </Panel>
   );
 }
 

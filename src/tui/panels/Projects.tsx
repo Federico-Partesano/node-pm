@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Text, useInput } from 'ink';
 import type { GitStatus, Project } from '../../shared/types.js';
+import { Panel } from '../components/Panel.js';
 
 type Props = {
   projects: Project[];
@@ -22,8 +23,7 @@ export function Projects({ projects, statusByName, selected, cursor, focused, on
   }, { isActive: focused });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={focused ? 'cyan' : 'gray'} paddingX={1}>
-      <Text bold color="cyan">Projects</Text>
+    <Panel title="Projects" focused={focused}>
       {projects.map((p) => {
         const sel = selected.has(p.name);
         const onCursorRow = p.name === cursor;
@@ -35,7 +35,7 @@ export function Projects({ projects, statusByName, selected, cursor, focused, on
           </Text>
         );
       })}
-    </Box>
+    </Panel>
   );
 }
 

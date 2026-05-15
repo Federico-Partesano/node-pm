@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { PMName, Project } from '../../shared/types.js';
+import { Panel } from '../components/Panel.js';
 
 type Props = {
   project: Project | null;
@@ -17,8 +18,7 @@ export function Detail({ project, path, pmName }: Props) {
     );
   }
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1}>
-      <Text bold color="cyan">{project.group}/{project.name}</Text>
+    <Panel title={`${project.group}/${project.name}`}>
       <Text>Path:   {path ?? '-'}</Text>
       <Text>Remote: {project.url}</Text>
       <Text>PM:     {pmName ?? '-'}</Text>
@@ -26,6 +26,6 @@ export function Detail({ project, path, pmName }: Props) {
       {(project.scripts?.favorites ?? []).map((s) => (
         <Text key={s}>  • {s}</Text>
       ))}
-    </Box>
+    </Panel>
   );
 }

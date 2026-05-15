@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Text, useInput } from 'ink';
+import { Panel } from '../components/Panel.js';
 
 export type GroupSummary = { name: string; count: number };
 
@@ -19,8 +20,7 @@ export function Groups({ groups, selected, focused, onSelect }: Props) {
   }, { isActive: focused });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={focused ? 'cyan' : 'gray'} paddingX={1}>
-      <Text bold color="cyan">Groups</Text>
+    <Panel title="Groups" focused={focused}>
       {groups.map((g) => {
         const sel = g.name === selected;
         return (
@@ -29,6 +29,6 @@ export function Groups({ groups, selected, focused, onSelect }: Props) {
           </Text>
         );
       })}
-    </Box>
+    </Panel>
   );
 }
