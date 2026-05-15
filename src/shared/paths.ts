@@ -2,6 +2,7 @@ import path from 'node:path';
 import os from 'node:os';
 import envPaths from 'env-paths';
 import { getDocumentsFolder } from 'platform-folders';
+import type { Project } from './types.js';
 
 const paths = envPaths('node-pm', { suffix: '' });
 
@@ -23,4 +24,8 @@ export function expandHome(p: string): string {
     return path.join(os.homedir(), p.slice(2));
   }
   return p;
+}
+
+export function resolveProjectPath(root: string, p: Project): string {
+  return path.join(expandHome(root), p.group, p.name);
 }

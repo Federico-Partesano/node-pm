@@ -8,18 +8,21 @@ import { Projects } from './panels/Projects.js';
 import { Detail } from './panels/Detail.js';
 import { Tasks } from './panels/Tasks.js';
 import { Logs, type LogTab } from './panels/Logs.js';
-import { ManifestStore } from '../core/manifest.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
 import { ScriptRunner } from '../core/runner.js';
-import type { PMName } from '../shared/types.js';
+import { resolveProjectPath } from '../shared/paths.js';
+import type { PMName, Project } from '../shared/types.js';
 
 type Panel = 'groups' | 'projects';
 
 export function App() {
   const { manifest, projects, loading } = useManifest();
-  const store = useMemo(() => new ManifestStore(), []);
+  const resolvePath = useMemo(
+    () => (p: Project) => manifest ? resolveProjectPath(manifest.root, p) : '',
+    [manifest],
+  );
   const git = useMemo(() => new GitOps(), []);
   const pm = useMemo(() => new PackageManager(), []);
   const runner = useMemo(() => new ScriptRunner(), []);
@@ -50,29 +53,29 @@ export function App() {
   );
   const paths = useMemo(() => {
     if (!manifest) return [];
-    return visibleProjects.map((p) => store.resolvePath(p));
-  }, [visibleProjects, store, manifest]);
+    return visibleProjects.map((p) => resolvePath(p));
+  }, [visibleProjects, resolvePath, manifest]);
   const statusByPath = useGitStatus(paths);
   const statusByName = useMemo(() => {
     const m = new Map<string, NonNullable<ReturnType<typeof statusByPath.get>>>();
     visibleProjects.forEach((p) => {
       if (!manifest) return;
-      const s = statusByPath.get(store.resolvePath(p));
+      const s = statusByPath.get(resolvePath(p));
       if (s) m.set(p.name, s);
     });
     return m;
-  }, [statusByPath, visibleProjects, store, manifest]);
+  }, [statusByPath, visibleProjects, resolvePath, manifest]);
 
   useEffect(() => {
     if (!cursor && visibleProjects[0]) setCursor(visibleProjects[0].name);
     const cur = visibleProjects.find((p) => p.name === cursor);
     if (!cur || !manifest) return;
     let cancelled = false;
-    pm.detect(store.resolvePath(cur))
+    pm.detect(resolvePath(cur))
       .then((name) => { if (!cancelled) setPmName(name); })
       .catch(() => { if (!cancelled) setPmName(null); });
     return () => { cancelled = true; };
-  }, [visibleProjects, cursor, pm, store, manifest]);
+  }, [visibleProjects, cursor, pm, resolvePath, manifest]);
 
   const { exit } = useApp();
   useInput((input, key) => {
@@ -83,24 +86,24 @@ export function App() {
     if (!manifest) return;
     if (input === 'p') {
       for (const p of visibleProjects.filter((p) => selected.has(p.name))) {
-        void queue.add(`pull:${p.name}`, () => git.pull(store.resolvePath(p)));
+        void queue.add(`pull:${p.name}`, () => git.pull(resolvePath(p)));
       }
     }
     if (input === 'c') {
       for (const p of visibleProjects.filter((p) => selected.has(p.name))) {
-        void queue.add(`clone:${p.name}`, () => git.clone(p.url, store.resolvePath(p)));
+        void queue.add(`clone:${p.name}`, () => git.clone(p.url, resolvePath(p)));
       }
     }
     if (input === 'i') {
       for (const p of visibleProjects.filter((p) => selected.has(p.name))) {
-        void queue.add(`install:${p.name}`, () => pm.install(store.resolvePath(p)));
+        void queue.add(`install:${p.name}`, () => pm.install(resolvePath(p)));
       }
     }
     if (input === 'r') {
       const cur = visibleProjects.find((p) => p.name === cursor);
       const fav = cur?.scripts?.favorites?.[0];
       if (cur && fav) {
-        void runner.spawn(cur, fav, store.resolvePath(cur)).then((handle) => {
+        void runner.spawn(cur, fav, resolvePath(cur)).then((handle) => {
           const tab: LogTab = { id: handle.id, label: `${cur.name}:${fav}`, lines: [] };
           setLogs((prev) => [...prev, tab]);
           setActiveLog(handle.id);
@@ -120,7 +123,7 @@ export function App() {
       <Box>
         <Box width="20%"><Groups groups={groupSummaries} selected={activeGroup ?? ''} focused={panel === 'groups'} onSelect={(n) => { setActiveGroup(n); setCursor(null); }} /></Box>
         <Box width="45%"><Projects projects={visibleProjects} statusByName={statusByName} selected={selected} cursor={cursor} focused={panel === 'projects'} onCursor={setCursor} onToggle={(n) => setSelected((s) => { const next = new Set(s); if (next.has(n)) next.delete(n); else next.add(n); return next; })} /></Box>
-        <Box width="35%"><Detail project={cur} path={cur && manifest ? store.resolvePath(cur) : null} pmName={pmName} /></Box>
+        <Box width="35%"><Detail project={cur} path={cur && manifest ? resolvePath(cur) : null} pmName={pmName} /></Box>
       </Box>
       <Box>
         <Box width="60%"><Tasks tasks={tasks} /></Box>
