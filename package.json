@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src test --ext .ts,.tsx",
+    "lint": "eslint src test",
     "release": "changeset publish"
   },
   "dependencies": {
@@ -26,7 +26,7 @@
     "ink-select-input": "^6.0.0",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",
-    "keytar": "^7.9.0",
+    "@napi-rs/keyring": "^1.1.0",
     "octokit": "^4.0.0",
     "p-queue": "^8.0.0",
     "platform-folders": "^0.6.0",
@@ -40,8 +40,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/write-file-atomic": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "typescript-eslint": "^8.0.0",
     "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^9.0.0",
     "ink-testing-library": "^4.0.0",
