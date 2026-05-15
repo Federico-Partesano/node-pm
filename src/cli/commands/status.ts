@@ -14,6 +14,7 @@ export function registerStatus(program: Command): void {
       const store = new ManifestStore();
       await store.load();
       const targets = await selectProjects(store, { all: opts.all, group: opts.group, names });
+      if (targets.length === 0) { console.error('No projects matched'); process.exitCode = 1; return; }
       const git = new GitOps();
       const out = await Promise.all(targets.map(async (p) => ({
         name: p.name, group: p.group, status: await git.status(store.resolvePath(p)),

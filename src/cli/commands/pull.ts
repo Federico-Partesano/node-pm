@@ -14,6 +14,7 @@ export function registerPull(program: Command): void {
       const store = new ManifestStore();
       const m = await store.load();
       const targets = await selectProjects(store, { all: opts.all, group: opts.group, names });
+      if (targets.length === 0) { console.error('No projects matched'); process.exitCode = 1; return; }
       const git = new GitOps();
       const queue = new TaskQueue(m.concurrency);
       let ok = 0, fail = 0;
