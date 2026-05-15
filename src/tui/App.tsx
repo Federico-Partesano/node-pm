@@ -66,7 +66,12 @@ export function App() {
   useEffect(() => {
     if (!cursor && visibleProjects[0]) setCursor(visibleProjects[0].name);
     const cur = visibleProjects.find((p) => p.name === cursor);
-    if (cur && manifest) pm.detect(store.resolvePath(cur)).then(setPmName).catch(() => setPmName(null));
+    if (!cur || !manifest) return;
+    let cancelled = false;
+    pm.detect(store.resolvePath(cur))
+      .then((name) => { if (!cancelled) setPmName(name); })
+      .catch(() => { if (!cancelled) setPmName(null); });
+    return () => { cancelled = true; };
   }, [visibleProjects, cursor, pm, store, manifest]);
 
   const { exit } = useApp();

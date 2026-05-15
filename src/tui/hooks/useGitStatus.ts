@@ -4,28 +4,30 @@ import type { GitStatus } from '../../shared/types.js';
 
 export function useGitStatus(paths: string[], refreshMs = 30000): Map<string, GitStatus> {
   const [statuses, setStatuses] = useState<Map<string, GitStatus>>(new Map());
+  const key = JSON.stringify(paths);
 
   useLayoutEffect(() => {
     const git = new GitOps();
     let alive = true;
 
     async function refresh() {
+      const fresh = new Map<string, GitStatus>();
       for (const p of paths) {
         if (!alive) return;
         try {
-          const s = await git.status(p);
-          if (!alive) return;
-          setStatuses((prev) => new Map(prev).set(p, s));
+          fresh.set(p, await git.status(p));
         } catch {
-          // leave previous status; do not crash UI
+          // skip
         }
       }
+      if (alive) setStatuses(fresh);
     }
 
     void refresh();
     const interval = setInterval(refresh, refreshMs);
     return () => { alive = false; clearInterval(interval); };
-  }, [paths.join('|'), refreshMs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, refreshMs]);
 
   return statuses;
 }
