@@ -26,7 +26,6 @@ export function useGitStatus(paths: string[], refreshMs = 30000): Map<string, Gi
     void refresh();
     const interval = setInterval(refresh, refreshMs);
     return () => { alive = false; clearInterval(interval); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, refreshMs]);
 
   return statuses;
