@@ -30,7 +30,6 @@ const { execaMock } = vi.hoisted(() => ({ execaMock: vi.fn() }));
 vi.mock('execa', () => ({ execa: execaMock }));
 
 // pm mock — returns 'npm' by default; tests can override via pmDetect
-// eslint-disable-next-line prefer-const
 let pmDetect: ReturnType<typeof vi.fn<() => Promise<'npm' | 'pnpm' | 'yarn' | 'bun'>>> =
   vi.fn(async () => 'npm' as const);
 

@@ -25,6 +25,7 @@ vi.mock('../../src/shared/paths.js', () => ({
 
 import { ManifestStore } from '../../src/core/manifest.js';
 import { ManifestError } from '../../src/shared/errors.js';
+import type { Manifest } from '../../src/shared/types.js';
 
 beforeEach(() => {
   vol.reset();
@@ -220,7 +221,7 @@ describe('save()', () => {
     const store = new ManifestStore();
     const m = await store.load();
     // Force invalid version via type cast
-    const bad = { ...m, version: 2 } as unknown as import('../../src/shared/types.js').Manifest;
+    const bad = { ...m, version: 2 } as unknown as Manifest;
     await expect(store.save(bad)).rejects.toThrow();
   });
 
@@ -400,7 +401,7 @@ describe('resolvePath()', () => {
   it('throws ManifestError E_MANIFEST_NOT_LOADED if cache is null', () => {
     const store = new ManifestStore(); // never loaded
     expect(() => store.resolvePath({ name: 'a', group: 'g', url: 'u' })).toSatisfy(
-      (thrown: unknown) => {
+      (_thrown: unknown) => {
         try {
           store.resolvePath({ name: 'a', group: 'g', url: 'u' });
           return false;

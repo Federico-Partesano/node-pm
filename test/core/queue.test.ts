@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TaskQueue } from '../../src/core/queue.js';
 
 // Helper: resolved promise after ms milliseconds

@@ -213,12 +213,6 @@ describe('GistSync.push()', () => {
     seedToken();
     const sync = new GistSync();
     // No sync.gistId → goes through gists.create path; still scrubs 'sync' from payload
-    const manifestWithSync = {
-      ...validManifest,
-      sync: { gistId: '', lastSync: new Date().toISOString() },
-    };
-    // A manifest with empty gistId acts like no-id (falsy check in impl)
-    // Use a plain manifest without sync instead, push via create, verify scrub
     await sync.push(validManifest); // no sync field
     // create was called; inspect what was sent
     const call = (gistApi.gists.create.mock.calls as any[])[0][0] as any;
@@ -277,7 +271,6 @@ describe('GistSync.push()', () => {
 
     await expect(sync.push(validManifest)).rejects.toThrow();
 
-    const { fs } = await import('memfs');
     // memfs vol was reset, so filesystem should be empty
     const files = Object.keys(vol.toJSON());
     expect(files).toHaveLength(0);
