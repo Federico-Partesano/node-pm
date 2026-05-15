@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { useManifest } from './hooks/useManifest.js';
 import { useGitStatus } from './hooks/useGitStatus.js';
 import { useQueue } from './hooks/useQueue.js';
@@ -13,6 +13,7 @@ import { useAppKeys } from './hooks/useAppKeys.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { useSnapshot } from './hooks/useSnapshot.js';
 import { usePage } from './hooks/usePage.js';
+import { HomePage, type HomeAction } from './pages/HomePage.js';
 import { MainPage } from './pages/MainPage.js';
 import { WizardPage } from './pages/WizardPage.js';
 import { AddProjectPage } from './pages/AddProjectPage.js';
@@ -39,14 +40,7 @@ export function App() {
   const { activeGroup, setActiveGroup, cursor, setCursor, selected, panel } = state;
 
   const isEmpty = projects.length === 0;
-  const page = usePage(isEmpty ? 'wizard' : 'main');
-
-  // Sync default page when manifest finishes loading
-  useEffect(() => {
-    if (loading) return;
-    if (isEmpty && page.current.id === 'main') page.reset('wizard');
-    if (!isEmpty && page.current.id !== 'main') page.reset('main');
-  }, [loading, isEmpty, page]);
+  const page = usePage('home');
 
   useEffect(() => {
     if (!activeGroup && groupSummaries[0]) setActiveGroup(groupSummaries[0].name);
@@ -109,6 +103,11 @@ export function App() {
   );
   const onExport = useCallback(() => { void snapshot.exportSnapshot(); }, [snapshot]);
 
+  // Esc on main page returns to home menu
+  useInput((_input, key) => {
+    if (key.escape && page.current.id === 'main') page.reset('home');
+  });
+
   useAppKeys({
     enabled: !!manifest && page.current.id === 'main',
     onTab,
@@ -128,8 +127,16 @@ export function App() {
     [setActiveGroup, setCursor],
   );
 
+  const handleHomeSelect = useCallback((action: HomeAction) => {
+    if (action === 'projects') page.goto('main');
+    else if (action === 'bulkClone') page.goto('bulkClone', { defaultGroup: activeGroup ?? 'OSS' });
+    else if (action === 'addProject') page.goto('addProject');
+    else if (action === 'wizard') page.goto('wizard');
+    else if (action === 'export') void snapshot.exportSnapshot();
+  }, [page, activeGroup, snapshot]);
+
   const handleBulkClone = useCallback(async (entries: ParsedEntry[]) => {
-    page.reset('main');
+    page.reset('home');
     for (const e of entries) {
       const project = { name: e.name, group: e.group, url: e.url };
       await store.addProject(project);
@@ -151,14 +158,26 @@ export function App() {
 
   // Render exactly one page
   switch (page.current.id) {
+    case 'home':
+      return (
+        <HomePage
+          width={cols}
+          height={rows}
+          root={root}
+          totalProjects={projects.length}
+          totalGroups={groupSummaries.length}
+          hasManifest={!!manifest && !isEmpty}
+          onSelect={handleHomeSelect}
+        />
+      );
     case 'wizard':
       return (
         <WizardPage
           width={cols}
           height={rows}
           initialRoot={root}
-          onComplete={() => { page.reset('main'); void reload(); }}
-          onCancel={() => page.replace('emptyHelp')}
+          onComplete={() => { page.reset('home'); void reload(); }}
+          onCancel={() => page.reset('home')}
         />
       );
     case 'addProject':
@@ -166,8 +185,8 @@ export function App() {
         <AddProjectPage
           width={cols}
           height={rows}
-          onDone={() => { page.reset('main'); void reload(); }}
-          onCancel={() => page.back()}
+          onDone={() => { page.reset('home'); void reload(); }}
+          onCancel={() => page.reset('home')}
         />
       );
     case 'bulkClone':
@@ -177,7 +196,7 @@ export function App() {
           height={rows}
           defaultGroup={(page.current.data?.defaultGroup as string) ?? 'OSS'}
           onSubmit={handleBulkClone}
-          onCancel={() => page.back()}
+          onCancel={() => page.reset('home')}
         />
       );
     case 'emptyHelp':

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-export type PageId = 'main' | 'wizard' | 'addProject' | 'bulkClone' | 'emptyHelp';
+export type PageId = 'home' | 'main' | 'wizard' | 'addProject' | 'bulkClone' | 'emptyHelp';
 
 export type PageState = {
   id: PageId;
@@ -12,7 +12,7 @@ export type PageState = {
  * Tiny page router: tracks the current page and an optional payload.
  * goto() pushes a new page, back() returns to the previous one.
  */
-export function usePage(initial: PageId = 'main') {
+export function usePage(initial: PageId = 'home') {
   const [stack, setStack] = useState<PageState[]>([{ id: initial }]);
 
   const goto = useCallback((id: PageId, data?: Record<string, unknown>) => {

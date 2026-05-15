@@ -32,87 +32,107 @@ import { App } from '../../src/tui/App.js';
 
 beforeEach(() => vi.clearAllMocks());
 
+async function selectProjectsFromHome(stdin: NodeJS.WritableStream) {
+  // Wait for home to render then press Enter (Projects is the first item)
+  await new Promise((r) => setTimeout(r, 100));
+  stdin.write('\r');
+  await new Promise((r) => setTimeout(r, 100));
+}
+
 describe('App', () => {
-  it('renders all panels and shows both groups', async () => {
+  it('opens on the home menu by default', async () => {
     const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 120));
     const out = lastFrame() ?? '';
-    expect(out).toContain('Groups');
+    expect(out).toContain('What do you want to do');
     expect(out).toContain('Projects');
-    expect(out).toContain('g1');
-    expect(out).toContain('g2');
-    expect(out).toContain('Tasks');
-    expect(out).toContain('Logs');
+    expect(out).toContain('Massive clone');
+    expect(out).toContain('Quit');
+  });
+
+  it('shows manifest stats in home header', async () => {
+    const { lastFrame } = render(<App />);
+    await new Promise((r) => setTimeout(r, 120));
+    const out = lastFrame() ?? '';
+    expect(out).toContain('groups');
+    expect(out).toContain('projects');
   });
 
   it('shows loading state initially before manifest loads', () => {
-    // Capture the very first frame before async operations complete
     const { lastFrame } = render(<App />);
-    // The first frame should show loading state (manifest not yet loaded)
     const firstFrame = lastFrame() ?? '';
-    // Initially it shows "loading manifest..." before the async load completes
-    // We can't guarantee exact timing, but the component doesn't crash immediately
     expect(typeof firstFrame).toBe('string');
     expect(firstFrame.length).toBeGreaterThan(0);
   });
 
-  it('after manifest loads, groups visible', async () => {
+  it('home menu items hint at every action', async () => {
     const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 120));
     const out = lastFrame() ?? '';
+    expect(out).toContain('Add a project');
+    expect(out).toContain('Scan wizard');
+    expect(out).toContain('Export snapshot');
+  });
+
+  it('after selecting Projects, main page renders both groups', async () => {
+    const { stdin, lastFrame } = render(<App />);
+    await selectProjectsFromHome(stdin);
+    const out = lastFrame() ?? '';
+    expect(out).toContain('Groups');
+    expect(out).toContain('Projects');
     expect(out).toContain('g1');
     expect(out).toContain('g2');
   });
 
-  it('after manifest loads, projects panel visible', async () => {
-    const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 150));
-    const out = lastFrame() ?? '';
-    expect(out).toContain('Projects');
-  });
-
-  it('renders Tasks panel label', async () => {
-    const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
+  it('main page renders Tasks and Logs panels', async () => {
+    const { stdin, lastFrame } = render(<App />);
+    await selectProjectsFromHome(stdin);
     const out = lastFrame() ?? '';
     expect(out).toContain('Tasks');
-  });
-
-  it('renders Logs panel label', async () => {
-    const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
-    const out = lastFrame() ?? '';
     expect(out).toContain('Logs');
   });
 
-  it('renders help bar with keyboard hints', async () => {
-    const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
+  it('main page footer shows tab/esc/quit hints', async () => {
+    const { stdin, lastFrame } = render(<App />);
+    await selectProjectsFromHome(stdin);
     const out = lastFrame() ?? '';
-    // Help text is always rendered after loading
     expect(out).toContain('tab');
+    expect(out).toContain('esc');
     expect(out).toContain('quit');
   });
 
-  it('both group names from mock manifest visible', async () => {
-    const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
+  it('Tasks panel shows no tasks message when idle', async () => {
+    const { stdin, lastFrame } = render(<App />);
+    await selectProjectsFromHome(stdin);
     const out = lastFrame() ?? '';
-    expect(out).toContain('g1');
-    expect(out).toContain('g2');
+    expect(out.toLowerCase()).toContain('no tasks queued');
   });
 
-  it('Groups panel title rendered', async () => {
-    const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
+  it('home menu shows reduced item set when manifest empty', async () => {
+    // override mock to return empty projects
+    vi.resetModules();
+    vi.doMock('../../src/core/manifest.js', () => ({
+      ManifestStore: class {
+        async load() { return { version: 1, root: '/r', concurrency: 5, projects: [] }; }
+        async list() { return []; }
+        resolvePath() { return ''; }
+        invalidate() {}
+      },
+    }));
+    const { App: EmptyApp } = await import('../../src/tui/App.js');
+    const { lastFrame } = render(<EmptyApp />);
+    await new Promise((r) => setTimeout(r, 120));
     const out = lastFrame() ?? '';
-    expect(out).toContain('Groups');
+    expect(out).toContain('Massive clone');
+    expect(out).toContain('Add a project');
+    expect(out).toContain('Scan wizard');
+    expect(out).not.toContain('📁  Projects'); // no manifest = no projects entry
   });
 
-  it('Tasks panel shows idle when no tasks running', async () => {
+  it('home menu items render with arrow indicator on selected', async () => {
     const { lastFrame } = render(<App />);
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 120));
     const out = lastFrame() ?? '';
-    expect(out).toContain('idle');
+    expect(out).toMatch(/❯ \s*📁/);
   });
 });

@@ -10,11 +10,9 @@ export const MAIN_HINTS: KeyHint[] = [
   { key: 'a/A', label: 'all/clear' },
   { key: 'p', label: 'pull' },
   { key: 'c', label: 'clone' },
-  { key: 'C', label: 'bulk-clone' },
   { key: 'i', label: 'install' },
   { key: 'r', label: 'run' },
-  { key: 'n', label: 'new' },
-  { key: 'e', label: 'export' },
+  { key: 'esc', label: 'home' },
   { key: 'q', label: 'quit' },
 ];
 
