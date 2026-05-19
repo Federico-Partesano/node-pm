@@ -21,6 +21,7 @@ import { AddProjectPage } from './pages/AddProjectPage.js';
 import { BulkClonePage } from './pages/BulkClonePage.js';
 import { HelpPage } from './pages/HelpPage.js';
 import { SnapshotPage } from './pages/SnapshotPage.js';
+import { SnapshotPickerPage } from './pages/SnapshotPickerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
@@ -147,12 +148,7 @@ export function App() {
     else if (action === 'export') void snapshot.exportSnapshot();
     else if (action === 'snapshotCreate') {
       if (!manifest || projects.length === 0) return;
-      void snapRun.startCreate(projects).then(({ iterable }) => {
-        setSnapMode('create');
-        setSnapProjects(projects);
-        setSnapEvents(iterable);
-        page.goto('snapshot');
-      });
+      page.goto('snapshotPicker');
     }
     else if (action === 'snapshotRestore') {
       if (!manifest || !snapRun.engine) return;
@@ -258,6 +254,22 @@ export function App() {
           root={root}
           onScan={() => page.replace('wizard')}
           onAddProject={() => page.goto('addProject')}
+        />
+      );
+    case 'snapshotPicker':
+      return (
+        <SnapshotPickerPage
+          projects={projects}
+          title="Select projects to snapshot"
+          onCancel={() => page.reset('home')}
+          onConfirm={(chosen) => {
+            void snapRun.startCreate(chosen).then(({ iterable }) => {
+              setSnapMode('create');
+              setSnapProjects(chosen);
+              setSnapEvents(iterable);
+              page.replace('snapshot');
+            });
+          }}
         />
       );
     case 'snapshot':

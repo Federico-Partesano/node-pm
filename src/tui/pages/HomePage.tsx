@@ -46,7 +46,7 @@ function HomePageImpl({
         { label: '🚀  Massive clone   — paste git URLs and clone in bulk', value: 'bulkClone' },
         { label: '➕  Add a project   — single repo by URL', value: 'addProject' },
         { label: '🔍  Scan wizard     — auto-discover repos under root', value: 'wizard' },
-        { label: '💾  Export snapshot — save manifest to JSON', value: 'export' },
+        { label: '💾  Export manifest — save project list to JSON (no working state)', value: 'export' },
         { label: '📦  Snapshot create — capture project working state', value: 'snapshotCreate' },
         { label: '♻️   Snapshot restore — restore from a .npmsnap', value: 'snapshotRestore' },
         { label: '⚙️   Settings        — configure snapshotDir', value: 'settings' },

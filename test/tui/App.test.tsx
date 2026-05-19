@@ -71,7 +71,7 @@ describe('App', () => {
     const out = lastFrame() ?? '';
     expect(out).toContain('Add a project');
     expect(out).toContain('Scan wizard');
-    expect(out).toContain('Export snapshot');
+    expect(out).toContain('Export manifest');
   });
 
   it('after selecting Projects, main page renders both groups', async () => {

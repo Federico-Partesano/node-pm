@@ -8,6 +8,7 @@ export type PageId =
   | 'bulkClone'
   | 'emptyHelp'
   | 'snapshot'
+  | 'snapshotPicker'
   | 'settings';
 
 export type PageState = {
