@@ -16,6 +16,8 @@ import { useSnapshotRun } from './hooks/useSnapshotRun.js';
 import { useSnapshotsIndex } from './hooks/useSnapshotsIndex.js';
 import { useProjectHealth } from './hooks/useProjectHealth.js';
 import { useHealthChecks } from './hooks/useHealthChecks.js';
+import { useQuickActions } from './hooks/useQuickActions.js';
+import { QuickActionsModal } from './components/QuickActionsModal.js';
 import { usePage } from './hooks/usePage.js';
 import { HomePage, type HomeAction } from './pages/HomePage.js';
 import { MainPage } from './pages/MainPage.js';
@@ -109,6 +111,8 @@ export function App() {
   );
   const { health: curHealth, loading: healthLoading } = useProjectHealth(curPath);
   const { checks: curHealthChecks, runAll: runAllChecks, runOne: runOneCheck } = useHealthChecks(curPath);
+  const quickActions = useQuickActions({ git, pm, store, reload });
+  const [quickOpen, setQuickOpen] = useState(false);
   const [snapEvents, setSnapEvents] = useState<AsyncIterable<SnapshotEvent> | null>(null);
   const [snapMode, setSnapMode] = useState<'create' | 'restore'>('create');
   const [snapProjects, setSnapProjects] = useState<Project[]>([]);
@@ -137,8 +141,12 @@ export function App() {
 
   // Esc on main page returns to home menu
   useInput((input, key) => {
-    if (key.escape && page.current.id === 'main') page.reset('home');
-    if (page.current.id === 'main' && curHealth) {
+    if (page.current.id === 'main' && !quickOpen && input === 'o' && cur) {
+      setQuickOpen(true);
+      return;
+    }
+    if (key.escape && page.current.id === 'main' && !quickOpen) page.reset('home');
+    if (page.current.id === 'main' && !quickOpen && curHealth) {
       const hints = curHealth.scriptHints;
       if (input === 'h') {
         runAllChecks({
@@ -338,6 +346,20 @@ export function App() {
       );
     case 'main':
     default:
+      if (quickOpen && cur) {
+        return (
+          <Box width={cols} height={rows} flexDirection="column" alignItems="center" justifyContent="center">
+            <QuickActionsModal
+              project={cur}
+              projectPath={curPath}
+              onClose={() => { setQuickOpen(false); void reload(); }}
+              loadBranches={() => quickActions.loadBranches(curPath!)}
+              loadScripts={() => quickActions.loadScripts(curPath!)}
+              onAction={(id, payload) => quickActions.runAction(id, cur, curPath, payload)}
+            />
+          </Box>
+        );
+      }
       return (
         <MainPage
           width={cols}

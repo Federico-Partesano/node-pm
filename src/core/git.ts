@@ -198,6 +198,29 @@ export class GitOps {
     }
   }
 
+  async listBranches(repo: string): Promise<{ local: string[]; remote: string[]; current: string | null }> {
+    const sg = simpleGit(repo);
+    try {
+      const local = await sg.branchLocal();
+      const remote = await sg.branch(['-r']);
+      return {
+        local: local.all,
+        remote: remote.all.filter((b) => !b.includes('HEAD ->')),
+        current: local.current ?? null,
+      };
+    } catch (err) {
+      throw new GitError(`listBranches failed in ${repo}`, 'E_GIT_BRANCHES', err as Error);
+    }
+  }
+
+  async fetchAll(repo: string): Promise<void> {
+    try {
+      await simpleGit(repo).fetch(['--all', '--prune']);
+    } catch (err) {
+      throw new GitError(`fetchAll failed in ${repo}`, 'E_GIT_FETCH', err as Error);
+    }
+  }
+
   async lsRemoteHas(repo: string, branch: string): Promise<boolean> {
     try {
       const r = await execa('git', ['ls-remote', '--heads', 'origin', branch], { cwd: repo });
