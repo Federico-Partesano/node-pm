@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { ProjectRow } from '../components/snapshot/ProjectRow.js';
-import { LogTail } from '../components/snapshot/LogTail.js';
-import { OverallBar } from '../components/snapshot/OverallBar.js';
 import type { Project } from '../../shared/types.js';
 import type { SnapshotEvent } from '../../core/snapshot.js';
-import { useSnapshotEvents } from '../hooks/useSnapshotEvents.js';
+import {
+  useSnapshotEvents,
+  CREATE_PHASES,
+  RESTORE_PHASES,
+} from '../hooks/useSnapshotEvents.js';
+import { SnapshotHeaderCard } from '../components/snapshot/SnapshotHeaderCard.js';
+import { ProjectsListCard } from '../components/snapshot/ProjectsListCard.js';
+import { ActiveProjectCard } from '../components/snapshot/ActiveProjectCard.js';
 
 type Props = {
   width: number;
@@ -14,60 +18,112 @@ type Props = {
   projects: Project[];
   events: AsyncIterable<SnapshotEvent>;
   onExit: () => void;
+  onRescan?: () => void;
 };
 
 const keyOf = (p: Project) => `${p.group}/${p.name}`;
 
-export function SnapshotPage({ width, height, mode, projects, events, onExit }: Props) {
-  const { rows, log, bytes, done, finished } = useSnapshotEvents(projects, events);
+export function SnapshotPage({
+  width,
+  height,
+  mode,
+  projects,
+  events,
+  onExit,
+  onRescan,
+}: Props) {
+  const state = useSnapshotEvents(projects, events);
+  const { rows, log, bytes, done, errors, warnings, finished, activeKey, outputPath } = state;
+  const [showRescanPrompt, setShowRescanPrompt] = useState(true);
 
-  useInput((_input, key) => {
+  const activeProject = activeKey
+    ? projects.find((p) => keyOf(p) === activeKey) ?? null
+    : null;
+  const activeRow = activeKey ? rows.get(activeKey) ?? null : null;
+  const phases = mode === 'create' ? CREATE_PHASES : RESTORE_PHASES;
+
+  const shouldPromptRescan =
+    finished && errors > 0 && !!onRescan && showRescanPrompt;
+
+  useInput((input, key) => {
+    if (shouldPromptRescan) {
+      if (input === 'y' || input === 'Y') {
+        setShowRescanPrompt(false);
+        onRescan?.();
+        return;
+      }
+      if (input === 'n' || input === 'N' || key.escape) {
+        setShowRescanPrompt(false);
+        onExit();
+        return;
+      }
+      return;
+    }
     if (key.escape) onExit();
   });
 
+  // Layout math
+  const leftWidth = Math.floor(width * 0.4);
+  const rightWidth = width - leftWidth;
+  // Reserve ~5 lines for header + 2 for prompt
+  const promptLines = shouldPromptRescan ? 3 : 1;
+  const headerLines = outputPath ? 6 : 5;
+  const bodyHeight = Math.max(8, height - headerLines - promptLines);
+
   return (
-    <Box
-      flexDirection="column"
-      width={width}
-      height={height}
-      borderStyle="round"
-      borderColor="cyan"
-      paddingX={2}
-      paddingY={1}
-    >
-      <Text bold color="cyanBright">
-        {mode === 'create' ? 'Creating snapshot' : 'Restoring snapshot'}
-      </Text>
-      <Box marginTop={1}>
-        <OverallBar done={done} total={projects.length} bytes={bytes} />
+    <Box flexDirection="column" width={width} height={height}>
+      <SnapshotHeaderCard
+        mode={mode}
+        total={projects.length}
+        done={done}
+        errors={errors}
+        warnings={warnings}
+        bytes={bytes}
+        outputPath={outputPath}
+        finished={finished}
+      />
+      <Box flexDirection="row" flexGrow={1}>
+        <ProjectsListCard
+          projects={projects}
+          rows={rows}
+          activeKey={activeKey}
+          width={leftWidth}
+          height={bodyHeight}
+        />
+        <ActiveProjectCard
+          project={activeProject}
+          row={activeRow}
+          phases={phases}
+          log={log}
+          width={rightWidth}
+          height={bodyHeight}
+          finished={finished}
+          errors={errors}
+        />
       </Box>
-      <Box marginTop={1} flexDirection="column">
-        {projects.map((p) => {
-          const r = rows.get(keyOf(p))!;
-          return (
-            <ProjectRow
-              key={keyOf(p)}
-              project={p}
-              status={r.status}
-              percent={r.percent}
-              detail={r.detail}
-            />
-          );
-        })}
-      </Box>
-      <Box
-        marginTop={1}
-        borderStyle="single"
-        borderColor="gray"
-        paddingX={1}
-        flexDirection="column"
-      >
-        <LogTail lines={log} />
-      </Box>
-      <Box marginTop={1}>
-        <Text dimColor>
-          {finished ? 'Done. Press Esc to return.' : 'Esc cancel'}
-        </Text>
+      <Box paddingX={2} flexDirection="column">
+        {shouldPromptRescan ? (
+          <Box>
+            <Text color="yellowBright" bold>
+              ⚠ {errors} progetti in errore.
+            </Text>
+            <Text>
+              {' '}Vuoi rilanciare lo scan per aggiornare il manifest?{' '}
+            </Text>
+            <Text color="cyanBright" bold>
+              [Y]
+            </Text>
+            <Text>es / </Text>
+            <Text color="cyanBright" bold>
+              [N]
+            </Text>
+            <Text>o</Text>
+          </Box>
+        ) : (
+          <Text dimColor>
+            {finished ? 'Done. Press Esc to return.' : 'Esc cancel'}
+          </Text>
+        )}
       </Box>
     </Box>
   );

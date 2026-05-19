@@ -291,6 +291,7 @@ export function App() {
           projects={snapProjects}
           events={snapEvents}
           onExit={() => { setSnapEvents(null); page.reset('home'); void reload(); }}
+          onRescan={() => { setSnapEvents(null); page.reset('wizard'); }}
         />
       );
     case 'settings':
