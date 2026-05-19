@@ -58,7 +58,7 @@ function MainPageImpl(p: Props) {
         activeGroup={p.activeGroup}
       />
       <Box flexDirection="column" flexGrow={1}>
-        <Box flexGrow={2} flexBasis={0}>
+        <Box flexGrow={1} flexBasis={0}>
           <Box flexGrow={1} flexBasis={0} minWidth={18}>
             <Groups
               groups={p.groupSummaries}
@@ -78,7 +78,7 @@ function MainPageImpl(p: Props) {
               onToggle={p.onToggle}
             />
           </Box>
-          <Box flexGrow={2} flexBasis={0} minWidth={32}>
+          <Box flexGrow={3} flexBasis={0} minWidth={32}>
             <Detail
               project={p.cur}
               path={p.curPath}
@@ -92,7 +92,7 @@ function MainPageImpl(p: Props) {
             />
           </Box>
         </Box>
-        <Box flexGrow={1} flexBasis={0}>
+        <Box height={Math.min(10, Math.max(4, p.tasks.length + p.logs.length + 4))} flexShrink={0}>
           <Box flexGrow={3} flexBasis={0}>
             <Tasks tasks={p.tasks} />
           </Box>
