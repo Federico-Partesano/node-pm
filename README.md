@@ -26,7 +26,10 @@ TUI-first manager for local Node project repositories. Bulk clone, pull, install
     pm run <script> [<name>...] [--all]
     pm sync push
     pm sync pull <gistId>
-    pm config set|get <key>          # root | concurrency | token
+    pm config set|get <key>          # root | concurrency | token | snapshotDir
+    pm snapshot create [<name>...] [--all] [--group X] [--out PATH] [--label S] [--no-zip]
+    pm snapshot restore <path>       [--only <name>] [--on-conflict skip|overwrite|abort]
+    pm snapshot list                 [--global | --scan <root>]
 
 ## TUI keybindings
 
@@ -52,6 +55,14 @@ Stored at:
 - Windows: `%APPDATA%\node-pm\Config\projects.json`
 
 Sync to a private GitHub Gist with `pm sync push` / `pm sync pull <gistId>`. The token is stored in your OS keychain.
+
+## Snapshots
+
+`pm snapshot` captures the live working state of selected projects — current commit, branch, uncommitted tracked changes, untracked files, gitignored files (except `node_modules/`), and stashes — into a single `.npmsnap` archive (a plain zip with content-addressed blobs). `pm snapshot restore` rehydrates a fresh clone byte-exact, including large binary files (200 MB+ uncommitted assets are supported via streaming I/O).
+
+Snapshots live under `~/.config/node-pm/snapshots/` by default. Configure a different path with `pm config set snapshotDir <path>` or from the TUI Settings page.
+
+**Security caveat:** snapshots may contain `.env` files and other secrets that live outside git. Treat `.npmsnap` files as sensitive — do **not** push them to public Gists or repositories.
 
 ## Platforms
 
