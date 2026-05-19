@@ -11,7 +11,7 @@ type Props = {
 
 export function RootStep({ root, onChange, onSubmit, error }: Props) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} marginY={1}>
+    <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} marginY={1}>
       <Text bold color="cyanBright">Welcome to node-pm — let&apos;s scan for projects</Text>
       <Box marginTop={1}>
         <Text dimColor>Root directory: </Text>

@@ -27,11 +27,24 @@ export function OnboardingWizard({ initialRoot, onComplete, onCancel, scanner, s
   const [current, setCurrent] = useState<string>('');
   const [found, setFound] = useState<DiscoveredProject[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [existingKeys, setExistingKeys] = useState<Set<string>>(new Set());
+  const existingKeysRef = useRef<Set<string>>(new Set());
   const [reviewIdx, setReviewIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef(scanner ?? new ProjectScanner());
   const storeRef = useRef(store ?? new ManifestStore());
   const cancelRef = useRef(false);
+
+  useEffect(() => {
+    void Promise.resolve()
+      .then(() => storeRef.current.list?.() ?? [])
+      .then((existing) => {
+        const set = new Set(existing.map((p) => `${p.group}/${p.name}`));
+        existingKeysRef.current = set;
+        setExistingKeys(set);
+      })
+      .catch(() => { /* no manifest yet — first run */ });
+  }, []);
 
   useInput((_input, key) => {
     if (!key.escape) return;
@@ -52,7 +65,12 @@ export function OnboardingWizard({ initialRoot, onComplete, onCancel, scanner, s
     void runScan(scannerRef.current, expandHome(root), cancelRef, setCurrent, setFound)
       .then((collected) => {
         if (cancelRef.current) return;
-        setPicked(new Set(collected.map(keyOf)));
+        // Default selection: only new projects (not already in manifest).
+        // If everything is new (first run), select all.
+        const ex = existingKeysRef.current;
+        const newOnes = collected.filter((p) => !ex.has(keyOf(p)));
+        const defaultPicks = newOnes.length > 0 ? newOnes : collected;
+        setPicked(new Set(defaultPicks.map(keyOf)));
         setReviewIdx(0);
         setStep('review');
       })
@@ -74,6 +92,7 @@ export function OnboardingWizard({ initialRoot, onComplete, onCancel, scanner, s
         found={found}
         picked={picked}
         cursor={reviewIdx}
+        existingKeys={existingKeys}
         onCursor={setReviewIdx}
         onToggle={(k) => setPicked(togglePick(picked, k))}
         onSelectAll={() => setPicked(new Set(found.map(keyOf)))}

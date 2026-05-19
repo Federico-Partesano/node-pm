@@ -12,7 +12,7 @@ type Props = {
 export function ScanningStep({ root, current, found }: Props) {
   const tail = found.slice(-10);
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1} marginY={1}>
+    <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1} marginY={1}>
       <Text>
         <Text color="yellow"><Spinner type="dots" /></Text>
         <Text bold> Scanning </Text>

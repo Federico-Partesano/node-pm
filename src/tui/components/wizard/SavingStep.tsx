@@ -4,7 +4,7 @@ import Spinner from 'ink-spinner';
 
 export function SavingStep({ count }: { count: number }) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={2} paddingY={1} marginY={1}>
+    <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="green" paddingX={2} paddingY={1} marginY={1}>
       <Text>
         <Text color="green"><Spinner type="dots" /></Text>
         <Text> Saving </Text>

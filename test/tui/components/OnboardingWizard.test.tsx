@@ -29,10 +29,12 @@ const loadMock = vi.fn(async () => ({
   version: 1, root: '/r', concurrency: 5, projects: [],
 }));
 const saveMock = vi.fn(async () => {});
+const listMock = vi.fn(async () => [] as Array<{ name: string; group: string; url: string }>);
 vi.mock('../../../src/core/manifest.js', () => ({
   ManifestStore: class {
     load = loadMock;
     save = saveMock;
+    list = listMock;
     addProject = addProjectMock;
     invalidate() {}
   },
@@ -68,6 +70,7 @@ beforeEach(() => {
   addProjectMock.mockClear();
   loadMock.mockClear();
   saveMock.mockClear();
+  listMock.mockClear();
 });
 
 describe('OnboardingWizard', () => {

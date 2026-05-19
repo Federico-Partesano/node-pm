@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { DiscoveredProject } from '../../../shared/types.js';
 
@@ -6,6 +6,7 @@ export type ReviewProps = {
   found: DiscoveredProject[];
   picked: Set<string>;
   cursor: number;
+  existingKeys: Set<string>;
   onCursor: (i: number) => void;
   onToggle: (k: string) => void;
   onSelectAll: () => void;
@@ -27,33 +28,69 @@ export function ReviewStep(p: ReviewProps) {
     if (input === 'A') p.onClear();
     if (key.return) p.onConfirm();
   });
+
+  const newOnes = useMemo(
+    () => p.found.filter((d) => !p.existingKeys.has(keyOf(d))),
+    [p.found, p.existingKeys],
+  );
+
   if (p.found.length === 0) {
     return (
-      <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1} marginY={1}>
+      <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1} marginY={1}>
         <Text color="yellow">No projects discovered.</Text>
         <Text dimColor>Esc to retry with a different root.</Text>
       </Box>
     );
   }
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} marginY={1}>
-      <Text bold color="cyanBright">Review discovered projects ({p.picked.size}/{p.found.length} selected)</Text>
-      <Box marginTop={1} flexDirection="column">
-        {p.found.map((d, i) => {
-          const k = keyOf(d);
-          const sel = p.picked.has(k);
-          const cur = i === p.cursor;
-          return (
-            <Box key={k}>
-              <Text color={cur ? 'cyanBright' : 'gray'}>{cur ? '❯ ' : '  '}</Text>
-              <Text color={sel ? 'green' : 'gray'}>{sel ? '◉' : '○'}</Text>
-              <Text> </Text>
-              <Text bold={cur}>{d.group}/{d.name}</Text>
-            </Box>
-          );
-        })}
+    <Box flexDirection="column" flexGrow={1} marginY={1}>
+      <NewProjectsCard newOnes={newOnes} total={p.found.length} />
+      <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1}>
+        <Text bold color="cyanBright">Review discovered projects ({p.picked.size}/{p.found.length} selected)</Text>
+        <Box marginTop={1} flexDirection="column">
+          {p.found.map((d, i) => {
+            const k = keyOf(d);
+            const sel = p.picked.has(k);
+            const cur = i === p.cursor;
+            const isNew = !p.existingKeys.has(k);
+            return (
+              <Box key={k}>
+                <Text color={cur ? 'cyanBright' : 'gray'}>{cur ? '❯ ' : '  '}</Text>
+                <Text color={sel ? 'green' : 'gray'}>{sel ? '◉' : '○'}</Text>
+                <Text> </Text>
+                <Text bold={cur} color={isNew ? 'yellowBright' : undefined}>{d.group}/{d.name}</Text>
+                {isNew && <Text color="yellow" bold> NEW</Text>}
+              </Box>
+            );
+          })}
+        </Box>
+        <Box marginTop={1}><Text dimColor>↑↓/jk nav · space toggle · a all · A clear · Enter save · Esc back</Text></Box>
       </Box>
-      <Box marginTop={1}><Text dimColor>↑↓/jk nav · space toggle · a all · A clear · Enter save · Esc back</Text></Box>
+    </Box>
+  );
+}
+
+function NewProjectsCard({ newOnes, total }: { newOnes: DiscoveredProject[]; total: number }) {
+  const hasExisting = total > newOnes.length;
+  const color = newOnes.length > 0 ? 'yellow' : 'gray';
+  return (
+    <Box flexDirection="column" flexGrow={0} borderStyle="round" borderColor={color} paddingX={2} paddingY={1}>
+      <Text>
+        <Text bold color={newOnes.length > 0 ? 'yellowBright' : 'gray'}>
+          {newOnes.length > 0 ? `✨ ${newOnes.length} new project(s) since last scan` : 'No new projects since last scan'}
+        </Text>
+        {hasExisting && <Text dimColor>  ({total - newOnes.length} already in manifest)</Text>}
+      </Text>
+      {newOnes.length > 0 && (
+        <Box marginTop={1} flexDirection="column">
+          {newOnes.slice(0, 20).map((d) => (
+            <Text key={keyOf(d)} color="yellowBright">  ✦ {d.group}/{d.name}</Text>
+          ))}
+          {newOnes.length > 20 && (
+            <Text dimColor>  …and {newOnes.length - 20} more</Text>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }
