@@ -259,6 +259,8 @@ export function App() {
     case 'snapshotPicker':
       return (
         <SnapshotPickerPage
+          width={cols}
+          height={rows}
           projects={projects}
           title="Select projects to snapshot"
           onCancel={() => page.reset('home')}
@@ -275,7 +277,7 @@ export function App() {
     case 'snapshot':
       if (!snapEvents) {
         return (
-          <Box flexDirection="column" paddingX={2} paddingY={1}>
+          <Box flexDirection="column" width={cols} height={rows} paddingX={2} paddingY={1}>
             <Text color="yellow">No snapshot in progress.</Text>
             <Text dimColor>Esc to return.</Text>
           </Box>
@@ -283,6 +285,8 @@ export function App() {
       }
       return (
         <SnapshotPage
+          width={cols}
+          height={rows}
           mode={snapMode}
           projects={snapProjects}
           events={snapEvents}
@@ -292,6 +296,8 @@ export function App() {
     case 'settings':
       return (
         <SettingsPage
+          width={cols}
+          height={rows}
           initialSnapshotDir={manifest?.snapshotDir}
           onExit={() => { page.reset('home'); void reload(); }}
         />

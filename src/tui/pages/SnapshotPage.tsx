@@ -8,6 +8,8 @@ import type { SnapshotEvent } from '../../core/snapshot.js';
 import { useSnapshotEvents } from '../hooks/useSnapshotEvents.js';
 
 type Props = {
+  width: number;
+  height: number;
   mode: 'create' | 'restore';
   projects: Project[];
   events: AsyncIterable<SnapshotEvent>;
@@ -16,7 +18,7 @@ type Props = {
 
 const keyOf = (p: Project) => `${p.group}/${p.name}`;
 
-export function SnapshotPage({ mode, projects, events, onExit }: Props) {
+export function SnapshotPage({ width, height, mode, projects, events, onExit }: Props) {
   const { rows, log, bytes, done, finished } = useSnapshotEvents(projects, events);
 
   useInput((_input, key) => {
@@ -26,7 +28,8 @@ export function SnapshotPage({ mode, projects, events, onExit }: Props) {
   return (
     <Box
       flexDirection="column"
-      flexGrow={1}
+      width={width}
+      height={height}
       borderStyle="round"
       borderColor="cyan"
       paddingX={2}

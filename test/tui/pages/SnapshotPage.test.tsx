@@ -32,6 +32,8 @@ describe('SnapshotPage (create)', () => {
     ];
     const { lastFrame } = render(
       <SnapshotPage
+        width={100}
+        height={24}
         mode="create"
         projects={projects}
         events={feed(events)}

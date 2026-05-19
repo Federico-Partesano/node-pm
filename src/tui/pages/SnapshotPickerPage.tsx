@@ -4,6 +4,8 @@ import type { Project } from '../../shared/types.js';
 import { usePicker } from '../hooks/usePicker.js';
 
 type Props = {
+  width: number;
+  height: number;
   projects: Project[];
   title?: string;
   onConfirm: (picked: Project[]) => void;
@@ -14,6 +16,8 @@ const keyOf = (p: Project) => `${p.group}/${p.name}`;
 const groupOf = (p: Project) => p.group;
 
 export function SnapshotPickerPage({
+  width,
+  height,
   projects,
   title = 'Select projects to snapshot',
   onConfirm,
@@ -49,7 +53,8 @@ export function SnapshotPickerPage({
     return (
       <Box
         flexDirection="column"
-        flexGrow={1}
+        width={width}
+        height={height}
         borderStyle="round"
         borderColor="yellow"
         paddingX={2}
@@ -64,7 +69,8 @@ export function SnapshotPickerPage({
   return (
     <Box
       flexDirection="column"
-      flexGrow={1}
+      width={width}
+      height={height}
       borderStyle="round"
       borderColor="cyan"
       paddingX={2}

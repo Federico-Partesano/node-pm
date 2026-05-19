@@ -5,11 +5,13 @@ import { ManifestStore } from '../../core/manifest.js';
 import { getDefaultSnapshotDir } from '../../shared/paths.js';
 
 type Props = {
+  width: number;
+  height: number;
   initialSnapshotDir?: string;
   onExit: () => void;
 };
 
-export function SettingsPage({ initialSnapshotDir, onExit }: Props) {
+export function SettingsPage({ width, height, initialSnapshotDir, onExit }: Props) {
   const [value, setValue] = useState<string>(
     initialSnapshotDir ?? getDefaultSnapshotDir(),
   );
@@ -22,7 +24,8 @@ export function SettingsPage({ initialSnapshotDir, onExit }: Props) {
   return (
     <Box
       flexDirection="column"
-      flexGrow={1}
+      width={width}
+      height={height}
       borderStyle="round"
       borderColor="cyan"
       paddingX={2}
