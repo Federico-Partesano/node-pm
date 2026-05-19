@@ -43,3 +43,10 @@ export class SyncError extends NodePMError {
     this.name = 'SyncError';
   }
 }
+
+export class SnapshotError extends NodePMError {
+  constructor(message: string, code: string, cause?: Error) {
+    super(message, code, cause);
+    this.name = 'SnapshotError';
+  }
+}
