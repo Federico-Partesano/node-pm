@@ -19,6 +19,10 @@ export function getDefaultRoot(): string {
   return path.join(getDocumentsFolder(), 'projects');
 }
 
+export function getDefaultSnapshotDir(): string {
+  return path.join(getConfigDir(), 'snapshots');
+}
+
 /**
  * Like getDefaultRoot, but if that path doesn't exist, fall back to
  * common alternatives that often do (lowercase 'documents', '~/projects',

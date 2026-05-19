@@ -13,6 +13,7 @@ import {
   getConfigDir,
   getManifestPath,
   getDefaultRoot,
+  getDefaultSnapshotDir,
   expandHome,
   resolveProjectPath,
 } from '../../src/shared/paths.js';
@@ -61,6 +62,17 @@ describe('getDefaultRoot', () => {
 // ---------------------------------------------------------------------------
 // expandHome
 // ---------------------------------------------------------------------------
+
+describe('getDefaultSnapshotDir', () => {
+  it('returns a path ending in node-pm/snapshots', () => {
+    const p = getDefaultSnapshotDir();
+    expect(p.replace(/\\/g, '/')).toMatch(/node-pm\/snapshots$/);
+  });
+
+  it('is rooted under the config dir', () => {
+    expect(getDefaultSnapshotDir()).toBe(path.join('/fake/config/node-pm', 'snapshots'));
+  });
+});
 
 describe('expandHome', () => {
   it('expands bare ~ to homedir', () => {
