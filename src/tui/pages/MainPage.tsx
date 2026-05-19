@@ -58,8 +58,8 @@ function MainPageImpl(p: Props) {
         activeGroup={p.activeGroup}
       />
       <Box flexDirection="column" flexGrow={1}>
-        <Box flexGrow={1} flexBasis={0}>
-          <Box flexGrow={1} flexBasis={0} minWidth={18}>
+        <Box flexShrink={0}>
+          <Box width={22}>
             <Groups
               groups={p.groupSummaries}
               selected={p.activeGroup ?? ''}
@@ -67,7 +67,7 @@ function MainPageImpl(p: Props) {
               onSelect={p.onSelectGroup}
             />
           </Box>
-          <Box flexGrow={2} flexBasis={0} minWidth={32}>
+          <Box width={34}>
             <Projects
               projects={p.visible}
               statusByName={p.statusByName}
@@ -78,7 +78,7 @@ function MainPageImpl(p: Props) {
               onToggle={p.onToggle}
             />
           </Box>
-          <Box flexGrow={3} flexBasis={0} minWidth={32}>
+          <Box flexGrow={1} flexBasis={0}>
             <Detail
               project={p.cur}
               path={p.curPath}

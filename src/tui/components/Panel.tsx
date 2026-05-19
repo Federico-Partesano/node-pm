@@ -30,7 +30,7 @@ export function Panel({
       borderColor={borderColor}
       paddingX={1}
       paddingY={0}
-      flexGrow={flexGrow}
+      flexGrow={flexGrow ?? 1}
       minWidth={minWidth}
       width={width}
     >
