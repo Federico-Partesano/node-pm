@@ -91,4 +91,119 @@ export class GitOps {
       throw new GitError(`Status failed in ${repoPath}`, 'E_GIT_STATUS', err as Error);
     }
   }
+
+  async headSha(repo: string): Promise<string> {
+    try {
+      return (await simpleGit(repo).revparse(['HEAD'])).trim();
+    } catch (err) {
+      throw new GitError(`headSha failed in ${repo}`, 'E_GIT_HEAD_SHA', err as Error);
+    }
+  }
+
+  async currentBranch(repo: string): Promise<string> {
+    try {
+      const s = await simpleGit(repo).status();
+      if (s.current) return s.current;
+      const sha = await this.headSha(repo);
+      return sha.slice(0, 7);
+    } catch (err) {
+      throw new GitError(`currentBranch failed in ${repo}`, 'E_GIT_BRANCH', err as Error);
+    }
+  }
+
+  async diffHead(repo: string): Promise<string> {
+    try {
+      const r = await execa('git', ['diff', 'HEAD'], { cwd: repo, stripFinalNewline: false });
+      return r.stdout;
+    } catch (err) {
+      throw new GitError(`diffHead failed in ${repo}`, 'E_GIT_DIFF', err as Error);
+    }
+  }
+
+  async listUntracked(repo: string): Promise<string[]> {
+    const r = await execa('git', ['ls-files', '--others', '--exclude-standard'], { cwd: repo });
+    return r.stdout.split('\n').filter(Boolean);
+  }
+
+  async listIgnored(repo: string, excludePrefixes: string[] = []): Promise<string[]> {
+    const r = await execa(
+      'git',
+      ['ls-files', '--others', '--ignored', '--exclude-standard'],
+      { cwd: repo },
+    );
+    return r.stdout
+      .split('\n')
+      .filter(Boolean)
+      .filter((p) => !excludePrefixes.some((pref) => p === pref || p.startsWith(`${pref}/`)));
+  }
+
+  async listStashes(
+    repo: string,
+  ): Promise<{ idx: number; message: string; includesUntracked: boolean }[]> {
+    const r = await execa('git', ['stash', 'list', '--format=%gd|%s'], { cwd: repo });
+    return r.stdout
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [ref, ...rest] = line.split('|');
+        const message = rest.join('|');
+        const m = /stash@\{(\d+)\}/.exec(ref);
+        const idx = m ? Number(m[1]) : -1;
+        return {
+          idx,
+          message,
+          includesUntracked: /WIP on|--include-untracked|untracked/i.test(message),
+        };
+      });
+  }
+
+  async stashPatch(repo: string, idx: number): Promise<string> {
+    const r = await execa(
+      'git',
+      ['stash', 'show', '-p', '--include-untracked', `stash@{${idx}}`],
+      { cwd: repo, stripFinalNewline: false },
+    );
+    return r.stdout;
+  }
+
+  async resetHard(repo: string, sha: string): Promise<void> {
+    try {
+      await simpleGit(repo).reset(['--hard', sha]);
+    } catch (err) {
+      throw new GitError(`resetHard ${sha} failed in ${repo}`, 'E_GIT_RESET', err as Error);
+    }
+  }
+
+  async applyDiff(repo: string, patch: string): Promise<void> {
+    if (!patch) return;
+    await execa('git', ['apply', '--3way', '--whitespace=nowarn', '-'], {
+      cwd: repo,
+      input: patch,
+    });
+  }
+
+  async applyStashPatch(repo: string, patch: string): Promise<void> {
+    if (!patch) return;
+    await execa('git', ['apply', '--3way', '--whitespace=nowarn', '-'], {
+      cwd: repo,
+      input: patch,
+    });
+  }
+
+  async checkoutBranch(repo: string, branch: string): Promise<void> {
+    try {
+      await simpleGit(repo).checkout(branch);
+    } catch {
+      await simpleGit(repo).checkoutLocalBranch(branch);
+    }
+  }
+
+  async lsRemoteHas(repo: string, branch: string): Promise<boolean> {
+    try {
+      const r = await execa('git', ['ls-remote', '--heads', 'origin', branch], { cwd: repo });
+      return r.stdout.trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
 }
