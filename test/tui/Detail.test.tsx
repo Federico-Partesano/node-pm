@@ -42,7 +42,7 @@ describe('Detail panel', () => {
     expect(out).toContain('No project selected');
   });
 
-  it('project with no scripts shows Favorite scripts label but no items', () => {
+  it('project with no scripts renders without errors and without favs row', () => {
     const { lastFrame } = render(
       <Detail
         project={mkProject({ scripts: undefined })}
@@ -51,12 +51,10 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Favorite scripts');
-    // No bullet points since there are no favorites
-    expect(out).not.toContain('▸');
+    expect(out).not.toContain('Favs');
   });
 
-  it('project with empty favorites array shows no script rows', () => {
+  it('project with empty favorites array does not render favs row', () => {
     const { lastFrame } = render(
       <Detail
         project={mkProject({ scripts: { favorites: [] } })}
@@ -65,11 +63,10 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('Favorite scripts');
-    expect(out).not.toContain('▸');
+    expect(out).not.toContain('Favs');
   });
 
-  it('project with multiple favorites lists all of them', () => {
+  it('project with multiple favorites lists all of them inline', () => {
     const { lastFrame } = render(
       <Detail
         project={mkProject({ scripts: { favorites: ['build', 'test', 'lint', 'dev'] } })}
@@ -78,6 +75,7 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
+    expect(out).toContain('Favs');
     expect(out).toContain('build');
     expect(out).toContain('test');
     expect(out).toContain('lint');
@@ -192,7 +190,7 @@ describe('Detail panel', () => {
     expect(out).toContain('/home/user/projects/my-group/my-project');
   });
 
-  it('single favorite script renders with bullet', () => {
+  it('single favorite script renders inline', () => {
     const { lastFrame } = render(
       <Detail
         project={mkProject({ scripts: { favorites: ['start'] } })}
@@ -201,7 +199,7 @@ describe('Detail panel', () => {
       />,
     );
     const out = lastFrame() ?? '';
-    expect(out).toContain('▸');
+    expect(out).toContain('Favs');
     expect(out).toContain('start');
   });
 });

@@ -6,6 +6,7 @@ import { ProjectSnapshotsCard } from '../components/ProjectSnapshotsCard.js';
 import { ProjectHealthCard } from '../components/ProjectHealthCard.js';
 import type { SnapshotIndexEntry } from '../hooks/useSnapshotsIndex.js';
 import type { ProjectHealth } from '../hooks/useProjectHealth.js';
+import type { HealthChecksByProject } from '../hooks/useHealthChecks.js';
 
 type Props = {
   project: Project | null;
@@ -16,6 +17,7 @@ type Props = {
   snapshotsLoading?: boolean;
   health?: ProjectHealth | null;
   healthLoading?: boolean;
+  healthChecks?: HealthChecksByProject;
 };
 
 export const Detail = React.memo(DetailImpl);
@@ -28,6 +30,7 @@ function DetailImpl({
   snapshotsLoading = false,
   health = null,
   healthLoading = false,
+  healthChecks = {},
 }: Props) {
   if (!project) {
     return (
@@ -44,89 +47,67 @@ function DetailImpl({
       subtitle={`${project.group}/${project.name}`}
       accent="green"
     >
-      <Section title="Identity">
-        <Field label="Group " value={project.group} color="yellow" />
-        <Field label="Name  " value={project.name} color="white" />
-        <Field label="Remote" value={project.url} color="white" />
-        {tags.length > 0 && (
-          <Box>
-            <Text dimColor>Tags   </Text>
-            {tags.map((t, i) => (
-              <Text key={t}>
-                {i > 0 && <Text dimColor>, </Text>}
-                <Text color="magenta">#{t}</Text>
-              </Text>
-            ))}
-          </Box>
+      {/* Identity / Location / Git collapsed into a compact block */}
+      <Field label="Remote" value={project.url} color="white" />
+      <Field label="Path" value={path ?? '—'} color="white" />
+      <Box>
+        <Text dimColor>PM </Text>
+        <Text color="yellow">{pmName ?? '—'}</Text>
+        <Text dimColor>  ·  Branch </Text>
+        <Text color="cyan">{status?.branch ?? project.defaultBranch ?? '—'}</Text>
+        <Text dimColor>  ·  </Text>
+        {status?.exists === false ? (
+          <Text color="red">missing on disk</Text>
+        ) : (
+          <>
+            <Text color={status?.dirty ? 'yellow' : 'green'}>
+              {status?.dirty ? 'dirty' : 'clean'}
+            </Text>
+            {status && status.ahead > 0 && (
+              <>
+                <Text> </Text>
+                <Text color="green">↑{status.ahead}</Text>
+              </>
+            )}
+            {status && status.behind > 0 && (
+              <>
+                <Text> </Text>
+                <Text color="red">↓{status.behind}</Text>
+              </>
+            )}
+          </>
         )}
-      </Section>
-
-      <Section title="Location">
-        <Field label="Path  " value={path ?? '—'} color="white" />
-        <Field label="PM    " value={pmName ?? '—'} color="yellow" />
-      </Section>
-
-      <Section title="Git">
-        <Field
-          label="Branch"
-          value={status?.branch ?? project.defaultBranch ?? '—'}
-          color="cyan"
-        />
+      </Box>
+      {tags.length > 0 && (
         <Box>
-          <Text dimColor>State  </Text>
-          {status?.exists === false ? (
-            <Text color="red">missing on disk</Text>
-          ) : (
-            <>
-              <Text color={status?.dirty ? 'yellow' : 'green'}>
-                {status?.dirty ? 'dirty' : 'clean'}
-              </Text>
-              {status && (status.ahead > 0 || status.behind > 0) && (
-                <>
-                  <Text dimColor>  ·  </Text>
-                  {status.ahead > 0 && <Text color="green">↑{status.ahead}</Text>}
-                  {status.ahead > 0 && status.behind > 0 && <Text> </Text>}
-                  {status.behind > 0 && <Text color="red">↓{status.behind}</Text>}
-                </>
-              )}
-            </>
-          )}
+          <Text dimColor>Tags </Text>
+          {tags.map((t, i) => (
+            <Text key={t}>
+              {i > 0 && <Text dimColor>, </Text>}
+              <Text color="magenta">#{t}</Text>
+            </Text>
+          ))}
         </Box>
-      </Section>
+      )}
+      {favs.length > 0 && (
+        <Box>
+          <Text dimColor>Favs </Text>
+          {favs.map((s, i) => (
+            <Text key={s}>
+              {i > 0 && <Text dimColor>, </Text>}
+              <Text color="cyan">{s}</Text>
+            </Text>
+          ))}
+        </Box>
+      )}
 
-      <Section title="Favorite scripts">
-        {favs.length === 0 && <Text dimColor>  none</Text>}
-        {favs.map((s) => (
-          <Text key={s}>
-            <Text color="cyan">  ▸ </Text>
-            {s}
-          </Text>
-        ))}
-      </Section>
-
-      <ProjectHealthCard health={health} loading={healthLoading} />
-      <ProjectSnapshotsCard
-        entries={snapshots}
-        loading={snapshotsLoading}
+      <ProjectHealthCard
+        health={health}
+        loading={healthLoading}
+        checks={healthChecks}
       />
+      <ProjectSnapshotsCard entries={snapshots} loading={snapshotsLoading} />
     </Panel>
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text bold color="cyan">
-        ─ {title}
-      </Text>
-      {children}
-    </Box>
   );
 }
 

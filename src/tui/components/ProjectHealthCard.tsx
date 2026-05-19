@@ -1,10 +1,17 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import Spinner from 'ink-spinner';
 import type { ProjectHealth } from '../hooks/useProjectHealth.js';
+import type {
+  HealthCheckKind,
+  HealthCheckState,
+  HealthChecksByProject,
+} from '../hooks/useHealthChecks.js';
 
 type Props = {
   health: ProjectHealth | null;
   loading: boolean;
+  checks?: HealthChecksByProject;
 };
 
 function fmtBytes(b: number): string {
@@ -23,64 +30,127 @@ function Badge({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-export function ProjectHealthCard({ health, loading }: Props) {
+const KIND_LABEL: Record<HealthCheckKind, string> = {
+  lint: 'lint',
+  typecheck: 'typecheck',
+  test: 'test',
+  build: 'build',
+};
+
+const KIND_ICON: Record<HealthCheckKind, string> = {
+  lint: '🧹',
+  typecheck: '🔎',
+  test: '🧪',
+  build: '📦',
+};
+
+function fmtMs(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function CheckRow({
+  kind,
+  script,
+  state,
+}: {
+  kind: HealthCheckKind;
+  script?: string;
+  state?: HealthCheckState;
+}) {
+  const status = state?.status ?? 'idle';
+  const icon =
+    status === 'running' ? null
+    : status === 'ok' ? '✓'
+    : status === 'fail' ? '✗'
+    : '·';
+  const color =
+    status === 'ok' ? 'green'
+    : status === 'fail' ? 'red'
+    : status === 'running' ? 'cyan'
+    : 'gray';
   return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text bold dimColor>
-        Project health
-      </Text>
-      {loading && <Text dimColor>  scanning project tree…</Text>}
-      {!loading && !health && <Text dimColor>  no path resolved</Text>}
-      {!loading && health && (
-        <>
-          <Box paddingLeft={2}>
-            <Text dimColor>Files </Text>
-            <Text>{health.fileCount}</Text>
-            <Text dimColor>  ·  Size </Text>
-            <Text>{fmtBytes(health.size)}</Text>
-          </Box>
-          <Box paddingLeft={2} flexDirection="column">
-            <Box>
-              <Badge ok={health.hasPackageJson} label="package.json" />
-              <Text dimColor>  </Text>
-              <Badge ok={health.hasTsconfig} label="tsconfig" />
-              <Text dimColor>  </Text>
-              <Badge ok={health.hasEslint} label="eslint" />
-            </Box>
-            <Box>
-              <Badge ok={health.hasVitest} label="vitest" />
-              <Text dimColor>  </Text>
-              <Badge ok={health.hasJest} label="jest" />
-              <Text dimColor>  </Text>
-              <Badge ok={health.hasGitHooks} label="git hooks" />
-            </Box>
-          </Box>
-          {Object.keys(health.scriptHints).some((k) => (health.scriptHints as Record<string, string | undefined>)[k]) && (
-            <Box paddingLeft={2} marginTop={1} flexDirection="column">
-              <Text bold dimColor>
-                Available checks
-              </Text>
-              {health.scriptHints.lint && <HintRow icon="🧹" label="lint" name={health.scriptHints.lint} />}
-              {health.scriptHints.typecheck && <HintRow icon="🔎" label="typecheck" name={health.scriptHints.typecheck} />}
-              {health.scriptHints.test && <HintRow icon="🧪" label="test" name={health.scriptHints.test} />}
-              {health.scriptHints.coverage && <HintRow icon="📊" label="coverage" name={health.scriptHints.coverage} />}
-              {health.scriptHints.build && <HintRow icon="📦" label="build" name={health.scriptHints.build} />}
-              {health.scriptHints.format && <HintRow icon="✨" label="format" name={health.scriptHints.format} />}
-            </Box>
-          )}
-        </>
+    <Box flexDirection="column">
+      <Box>
+        <Box width={3}>
+          {icon ? <Text color={color}>{icon}</Text> : <Text color="cyan"><Spinner type="dots" /></Text>}
+        </Box>
+        <Text>{KIND_ICON[kind]} </Text>
+        <Box width={11}><Text color="cyan">{KIND_LABEL[kind]}</Text></Box>
+        {!script && <Text dimColor>n/a</Text>}
+        {script && status === 'idle' && (
+          <Text dimColor>{`npm run ${script}`}</Text>
+        )}
+        {script && status === 'running' && <Text color="cyan">running…</Text>}
+        {state && (state.status === 'ok' || state.status === 'fail') && (
+          <>
+            <Text color={state.status === 'ok' ? 'green' : 'red'}>
+              {state.status === 'ok' ? 'ok' : `fail (exit ${state.exitCode})`}
+            </Text>
+            <Text dimColor>  · </Text>
+            <Text dimColor>{fmtMs(state.durationMs)}</Text>
+            {state.summary && (
+              <>
+                <Text dimColor>  · </Text>
+                <Text>{state.summary}</Text>
+              </>
+            )}
+          </>
+        )}
+      </Box>
+      {state && state.status === 'fail' && state.tail && (
+        <Box paddingLeft={5} flexDirection="column">
+          {state.tail.split('\n').slice(-3).map((line, i) => (
+            <Text key={i} color="red" dimColor>{line}</Text>
+          ))}
+        </Box>
       )}
     </Box>
   );
 }
 
-function HintRow({ icon, label, name }: { icon: string; label: string; name: string }) {
+export function ProjectHealthCard({ health, loading, checks = {} }: Props) {
   return (
-    <Box>
-      <Text>{icon} </Text>
-      <Text color="cyan">{label.padEnd(10)}</Text>
-      <Text dimColor>npm run </Text>
-      <Text>{name}</Text>
+    <Box flexDirection="column">
+      <Text bold color="cyan">
+        ─ Health
+      </Text>
+      {loading && <Text dimColor>scanning…</Text>}
+      {!loading && !health && <Text dimColor>no path resolved</Text>}
+      {!loading && health && (
+        <>
+          <Box>
+            <Text dimColor>Files </Text>
+            <Text>{health.fileCount}</Text>
+            <Text dimColor> · Size </Text>
+            <Text>{fmtBytes(health.size)}</Text>
+          </Box>
+          <Box>
+            <Badge ok={health.hasPackageJson} label="pkg" />
+            <Text> </Text>
+            <Badge ok={health.hasTsconfig} label="tsconfig" />
+            <Text> </Text>
+            <Badge ok={health.hasEslint} label="eslint" />
+            <Text> </Text>
+            <Badge ok={health.hasVitest} label="vitest" />
+            <Text> </Text>
+            <Badge ok={health.hasJest} label="jest" />
+            <Text> </Text>
+            <Badge ok={health.hasGitHooks} label="hooks" />
+          </Box>
+          {(['lint', 'typecheck', 'test', 'build'] as const).some(
+            (k) => health.scriptHints[k],
+          ) && (
+            <Box flexDirection="column">
+              <Text dimColor>(h=run all · l/y/t/b=single)</Text>
+              <CheckRow kind="lint" script={health.scriptHints.lint} state={checks.lint} />
+              <CheckRow kind="typecheck" script={health.scriptHints.typecheck} state={checks.typecheck} />
+              <CheckRow kind="test" script={health.scriptHints.test} state={checks.test} />
+              <CheckRow kind="build" script={health.scriptHints.build} state={checks.build} />
+            </Box>
+          )}
+        </>
+      )}
     </Box>
   );
 }

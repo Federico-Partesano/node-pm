@@ -15,6 +15,7 @@ import { useSnapshot } from './hooks/useSnapshot.js';
 import { useSnapshotRun } from './hooks/useSnapshotRun.js';
 import { useSnapshotsIndex } from './hooks/useSnapshotsIndex.js';
 import { useProjectHealth } from './hooks/useProjectHealth.js';
+import { useHealthChecks } from './hooks/useHealthChecks.js';
 import { usePage } from './hooks/usePage.js';
 import { HomePage, type HomeAction } from './pages/HomePage.js';
 import { MainPage } from './pages/MainPage.js';
@@ -107,6 +108,7 @@ export function App() {
     [statusByName, cur],
   );
   const { health: curHealth, loading: healthLoading } = useProjectHealth(curPath);
+  const { checks: curHealthChecks, runAll: runAllChecks, runOne: runOneCheck } = useHealthChecks(curPath);
   const [snapEvents, setSnapEvents] = useState<AsyncIterable<SnapshotEvent> | null>(null);
   const [snapMode, setSnapMode] = useState<'create' | 'restore'>('create');
   const [snapProjects, setSnapProjects] = useState<Project[]>([]);
@@ -134,8 +136,22 @@ export function App() {
   const onExport = useCallback(() => { void snapshot.exportSnapshot(); }, [snapshot]);
 
   // Esc on main page returns to home menu
-  useInput((_input, key) => {
+  useInput((input, key) => {
     if (key.escape && page.current.id === 'main') page.reset('home');
+    if (page.current.id === 'main' && curHealth) {
+      const hints = curHealth.scriptHints;
+      if (input === 'h') {
+        runAllChecks({
+          lint: hints.lint,
+          typecheck: hints.typecheck,
+          test: hints.test,
+          build: hints.build,
+        });
+      } else if (input === 'l' && hints.lint) runOneCheck('lint', hints.lint);
+      else if (input === 'y' && hints.typecheck) runOneCheck('typecheck', hints.typecheck);
+      else if (input === 't' && hints.test) runOneCheck('test', hints.test);
+      else if (input === 'b' && hints.build) runOneCheck('build', hints.build);
+    }
   });
 
   useAppKeys({
@@ -347,6 +363,7 @@ export function App() {
           snapshotsLoading={snapshotsLoading}
           curHealth={curHealth}
           healthLoading={healthLoading}
+          healthChecks={curHealthChecks}
           tasks={tasks}
           logs={logs}
           activeLog={activeLog}

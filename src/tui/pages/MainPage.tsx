@@ -7,6 +7,7 @@ import type { LogTab } from '../panels/Logs.js';
 import type { SnapshotResult } from '../hooks/useSnapshot.js';
 import type { SnapshotIndexEntry } from '../hooks/useSnapshotsIndex.js';
 import type { ProjectHealth } from '../hooks/useProjectHealth.js';
+import type { HealthChecksByProject } from '../hooks/useHealthChecks.js';
 import { Header } from '../components/Header.js';
 import { Footer, MAIN_HINTS } from '../components/Footer.js';
 import { Groups } from '../panels/Groups.js';
@@ -39,6 +40,7 @@ type Props = {
   snapshotsLoading: boolean;
   curHealth: ProjectHealth | null;
   healthLoading: boolean;
+  healthChecks: HealthChecksByProject;
   tasks: QueueTask[];
   logs: LogTab[];
   activeLog: string | null;
@@ -86,6 +88,7 @@ function MainPageImpl(p: Props) {
               snapshotsLoading={p.snapshotsLoading}
               health={p.curHealth}
               healthLoading={p.healthLoading}
+              healthChecks={p.healthChecks}
             />
           </Box>
         </Box>

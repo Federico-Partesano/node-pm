@@ -23,38 +23,30 @@ function basename(p: string): string {
   return ix >= 0 ? p.slice(ix + 1) : p;
 }
 
-export function ProjectSnapshotsCard({ entries, loading, max = 8 }: Props) {
+export function ProjectSnapshotsCard({ entries, loading, max = 6 }: Props) {
   return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text bold dimColor>
-        Snapshots ({entries.length})
+    <Box flexDirection="column">
+      <Text bold color="cyan">
+        ─ Snapshots ({entries.length})
       </Text>
-      {loading && (
-        <Text dimColor>  scanning snapshotDir…</Text>
-      )}
+      {loading && <Text dimColor>scanning snapshotDir…</Text>}
       {!loading && entries.length === 0 && (
-        <Text dimColor>  no snapshots contain this project yet</Text>
+        <Text dimColor>no snapshots for this project yet</Text>
       )}
       {entries.slice(0, max).map((e, i) => (
-        <Box key={`${e.archivePath}-${i}`} flexDirection="column">
-          <Box>
-            <Text color="cyan">📦 </Text>
-            <Text bold>{fmtDate(e.createdAt)}</Text>
-            {e.label && <Text color="yellow">  [{e.label}]</Text>}
-          </Box>
-          <Box paddingLeft={3}>
-            <Text dimColor>branch </Text>
-            <Text color="cyan">{e.branch}</Text>
-            <Text dimColor>  @ </Text>
-            <Text>{e.head.slice(0, 7)}</Text>
-          </Box>
-          <Box paddingLeft={3}>
-            <Text dimColor>{basename(e.archivePath)}</Text>
-          </Box>
+        <Box key={`${e.archivePath}-${i}`}>
+          <Text color="cyan">📦 </Text>
+          <Text bold>{fmtDate(e.createdAt)}</Text>
+          {e.label && <Text color="yellow"> [{e.label}]</Text>}
+          <Text dimColor> · </Text>
+          <Text color="cyan">{e.branch}</Text>
+          <Text dimColor>@</Text>
+          <Text>{e.head.slice(0, 7)}</Text>
+          <Text dimColor> · {basename(e.archivePath)}</Text>
         </Box>
       ))}
       {entries.length > max && (
-        <Text dimColor>  …and {entries.length - max} more</Text>
+        <Text dimColor>…and {entries.length - max} more</Text>
       )}
     </Box>
   );
