@@ -3,7 +3,7 @@ import { useInput } from 'ink';
 import { ProjectScanner, type ScanEvent } from '../../core/scanner.js';
 import { ManifestStore } from '../../core/manifest.js';
 import { expandHome } from '../../shared/paths.js';
-import type { DiscoveredProject } from '../../shared/types.js';
+import type { DiscoveredProject, Project } from '../../shared/types.js';
 import { RootStep } from './wizard/RootStep.js';
 import { ScanningStep } from './wizard/ScanningStep.js';
 import { ReviewStep } from './wizard/ReviewStep.js';
@@ -28,7 +28,9 @@ export function OnboardingWizard({ initialRoot, onComplete, onCancel, scanner, s
   const [found, setFound] = useState<DiscoveredProject[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [existingKeys, setExistingKeys] = useState<Set<string>>(new Set());
+  const [existingProjects, setExistingProjects] = useState<Project[]>([]);
   const existingKeysRef = useRef<Set<string>>(new Set());
+  const existingProjectsRef = useRef<Project[]>([]);
   const [reviewIdx, setReviewIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef(scanner ?? new ProjectScanner());
@@ -39,9 +41,12 @@ export function OnboardingWizard({ initialRoot, onComplete, onCancel, scanner, s
     void Promise.resolve()
       .then(() => storeRef.current.list?.() ?? [])
       .then((existing) => {
-        const set = new Set(existing.map((p) => `${p.group}/${p.name}`));
+        const arr = existing as Project[];
+        const set = new Set(arr.map((p) => `${p.group}/${p.name}`));
         existingKeysRef.current = set;
+        existingProjectsRef.current = arr;
         setExistingKeys(set);
+        setExistingProjects(arr);
       })
       .catch(() => { /* no manifest yet — first run */ });
   }, []);
@@ -93,14 +98,17 @@ export function OnboardingWizard({ initialRoot, onComplete, onCancel, scanner, s
         picked={picked}
         cursor={reviewIdx}
         existingKeys={existingKeys}
+        existingProjects={existingProjects}
         onCursor={setReviewIdx}
         onToggle={(k) => setPicked(togglePick(picked, k))}
         onSelectAll={() => setPicked(new Set(found.map(keyOf)))}
         onClear={() => setPicked(new Set())}
         onConfirm={() => {
-          if (picked.size === 0) return;
+          const foundKeys = new Set(found.map(keyOf));
+          const stale = existingProjects.filter((p) => !foundKeys.has(`${p.group}/${p.name}`));
+          if (picked.size === 0 && stale.length === 0) return;
           setStep('saving');
-          void saveAll(storeRef.current, found, picked, root, onComplete);
+          void saveAll(storeRef.current, found, picked, root, stale, onComplete);
         }}
         onBack={() => setStep('root')}
       />
@@ -150,12 +158,16 @@ async function saveAll(
   found: DiscoveredProject[],
   picked: Set<string>,
   root: string,
+  stale: Project[],
   onComplete: () => void,
 ): Promise<void> {
   const m = await store.load();
   if (m.root !== root) await store.save({ ...m, root });
   for (const p of found) {
     if (picked.has(keyOf(p))) await store.addProject(p);
+  }
+  for (const p of stale) {
+    if (store.removeProject) await store.removeProject(p.name, p.group);
   }
   onComplete();
 }

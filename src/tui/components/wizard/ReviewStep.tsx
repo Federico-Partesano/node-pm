@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
-import type { DiscoveredProject } from '../../../shared/types.js';
+import type { DiscoveredProject, Project } from '../../../shared/types.js';
 
 export type ReviewProps = {
   found: DiscoveredProject[];
   picked: Set<string>;
   cursor: number;
   existingKeys: Set<string>;
+  existingProjects: Project[];
   onCursor: (i: number) => void;
   onToggle: (k: string) => void;
   onSelectAll: () => void;
@@ -15,7 +16,7 @@ export type ReviewProps = {
   onBack: () => void;
 };
 
-const keyOf = (p: DiscoveredProject) => `${p.group}/${p.name}`;
+const keyOf = (p: { name: string; group: string }) => `${p.group}/${p.name}`;
 
 export function ReviewStep(p: ReviewProps) {
   useInput((input, key) => {
@@ -29,12 +30,19 @@ export function ReviewStep(p: ReviewProps) {
     if (key.return) p.onConfirm();
   });
 
+  const foundKeys = useMemo(() => new Set(p.found.map(keyOf)), [p.found]);
+
   const newOnes = useMemo(
     () => p.found.filter((d) => !p.existingKeys.has(keyOf(d))),
     [p.found, p.existingKeys],
   );
 
-  if (p.found.length === 0) {
+  const stale = useMemo(
+    () => p.existingProjects.filter((proj) => !foundKeys.has(keyOf(proj))),
+    [p.existingProjects, foundKeys],
+  );
+
+  if (p.found.length === 0 && stale.length === 0) {
     return (
       <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1} marginY={1}>
         <Text color="yellow">No projects discovered.</Text>
@@ -45,6 +53,7 @@ export function ReviewStep(p: ReviewProps) {
   return (
     <Box flexDirection="column" flexGrow={1} marginY={1}>
       <NewProjectsCard newOnes={newOnes} total={p.found.length} />
+      {stale.length > 0 && <MissingProjectsCard stale={stale} />}
       <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1}>
         <Text bold color="cyanBright">Review discovered projects ({p.picked.size}/{p.found.length} selected)</Text>
         <Box marginTop={1} flexDirection="column">
@@ -91,6 +100,27 @@ function NewProjectsCard({ newOnes, total }: { newOnes: DiscoveredProject[]; tot
           )}
         </Box>
       )}
+    </Box>
+  );
+}
+
+function MissingProjectsCard({ stale }: { stale: Project[] }) {
+  return (
+    <Box flexDirection="column" flexGrow={0} borderStyle="round" borderColor="red" paddingX={2} paddingY={1}>
+      <Text bold color="redBright">
+        🗑  {stale.length} progetto/i non più sul disco — saranno rimossi dal manifest
+      </Text>
+      <Box marginTop={1} flexDirection="column">
+        {stale.slice(0, 20).map((p) => (
+          <Text key={keyOf(p)} color="red">  ✗ {p.group}/{p.name}</Text>
+        ))}
+        {stale.length > 20 && (
+          <Text dimColor>  …and {stale.length - 20} more</Text>
+        )}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>Premi Esc per annullare e cambiare root se non vuoi rimuoverli.</Text>
+      </Box>
     </Box>
   );
 }
