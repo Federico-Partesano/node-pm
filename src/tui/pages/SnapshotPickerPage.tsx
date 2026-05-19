@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Project } from '../../shared/types.js';
+import { usePicker } from '../hooks/usePicker.js';
 
 type Props = {
   projects: Project[];
@@ -10,6 +11,7 @@ type Props = {
 };
 
 const keyOf = (p: Project) => `${p.group}/${p.name}`;
+const groupOf = (p: Project) => p.group;
 
 export function SnapshotPickerPage({
   projects,
@@ -17,41 +19,30 @@ export function SnapshotPickerPage({
   onConfirm,
   onCancel,
 }: Props) {
-  const [cursor, setCursor] = useState(0);
-  const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [groupFilter, setGroupFilter] = useState<string | null>(null);
-
-  const groups = Array.from(new Set(projects.map((p) => p.group))).sort();
-  const visible = groupFilter
-    ? projects.filter((p) => p.group === groupFilter)
-    : projects;
+  const picker = usePicker({ items: projects, keyOf, groupOf });
+  const {
+    cursor,
+    picked,
+    groupFilter,
+    visible,
+    pickedItems,
+    moveUp,
+    moveDown,
+    toggle,
+    selectAllVisible,
+    clear,
+    cycleGroup,
+  } = picker;
 
   useInput((input, key) => {
     if (key.escape) return onCancel();
-    const up = key.upArrow || input === 'k';
-    const down = key.downArrow || input === 'j';
-    if (up && cursor > 0) setCursor(cursor - 1);
-    if (down && cursor < visible.length - 1) setCursor(cursor + 1);
-    if (input === ' ' && visible[cursor]) {
-      const k = keyOf(visible[cursor]!);
-      const next = new Set(picked);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
-      setPicked(next);
-    }
-    if (input === 'a') setPicked(new Set(visible.map(keyOf)));
-    if (input === 'A') setPicked(new Set());
-    if (input === 'g') {
-      // cycle through group filters: null -> g0 -> g1 -> ... -> null
-      const idx = groupFilter ? groups.indexOf(groupFilter) : -1;
-      const next = idx + 1 < groups.length ? groups[idx + 1] : null;
-      setGroupFilter(next);
-      setCursor(0);
-    }
-    if (key.return) {
-      const chosen = projects.filter((p) => picked.has(keyOf(p)));
-      if (chosen.length > 0) onConfirm(chosen);
-    }
+    if (key.upArrow || input === 'k') moveUp();
+    if (key.downArrow || input === 'j') moveDown();
+    if (input === ' ') toggle();
+    if (input === 'a') selectAllVisible();
+    if (input === 'A') clear();
+    if (input === 'g') cycleGroup();
+    if (key.return && pickedItems.length > 0) onConfirm(pickedItems);
   });
 
   if (projects.length === 0) {
