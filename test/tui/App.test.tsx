@@ -44,7 +44,7 @@ describe('App', () => {
     const { lastFrame } = render(<App />);
     await new Promise((r) => setTimeout(r, 120));
     const out = lastFrame() ?? '';
-    expect(out).toContain('What do you want to do');
+    expect(out).toContain('Cosa vuoi fare');
     expect(out).toContain('Projects');
     expect(out).toContain('Massive clone');
     expect(out).toContain('Quit');
