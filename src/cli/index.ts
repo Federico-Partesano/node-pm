@@ -13,6 +13,7 @@ import { registerSync } from './commands/sync.js';
 import { registerConfig } from './commands/config.js';
 import { registerExport } from './commands/export.js';
 import { registerImport } from './commands/import.js';
+import { registerSnapshot } from './commands/snapshot.js';
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -32,5 +33,6 @@ export async function runCli(argv: string[]): Promise<void> {
   registerConfig(program);
   registerExport(program);
   registerImport(program);
+  registerSnapshot(program);
   await program.parseAsync(argv);
 }
