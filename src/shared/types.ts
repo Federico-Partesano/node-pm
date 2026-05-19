@@ -21,8 +21,46 @@ export const ManifestSchema = z.object({
   root: z.string().min(1),
   concurrency: z.number().int().positive().default(5),
   sync: SyncStateSchema.optional(),
+  snapshotDir: z.string().optional(),
   projects: z.array(ProjectSchema),
 });
+
+export const BlobRefSchema = z.object({
+  path: z.string(),
+  blob: z.string().regex(/^[a-f0-9]{64}$/),
+  size: z.number().int().nonnegative(),
+  mode: z.string().optional(),
+});
+export type BlobRef = z.infer<typeof BlobRefSchema>;
+
+export const StashEntrySchema = z.object({
+  message: z.string(),
+  patch: z.string(),
+  includesUntracked: z.boolean(),
+});
+export type StashEntry = z.infer<typeof StashEntrySchema>;
+
+export const ProjectSnapshotSchema = z.object({
+  name: z.string(),
+  group: z.string(),
+  url: z.string(),
+  branch: z.string(),
+  head: z.string(),
+  trackedDiff: z.string(),
+  untrackedFiles: z.array(BlobRefSchema),
+  gitignoredFiles: z.array(BlobRefSchema),
+  stashes: z.array(StashEntrySchema),
+  warnings: z.array(z.string()).optional(),
+});
+export type ProjectSnapshot = z.infer<typeof ProjectSnapshotSchema>;
+
+export const SnapshotSchema = z.object({
+  version: z.literal(1),
+  createdAt: z.string().datetime(),
+  label: z.string().optional(),
+  projects: z.array(ProjectSnapshotSchema),
+});
+export type Snapshot = z.infer<typeof SnapshotSchema>;
 
 export type Project = z.infer<typeof ProjectSchema>;
 export type Manifest = z.infer<typeof ManifestSchema>;
