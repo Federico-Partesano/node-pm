@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useManifest } from './hooks/useManifest.js';
 import { useGitStatus } from './hooks/useGitStatus.js';
@@ -12,6 +12,7 @@ import { useBulkActions } from './hooks/useBulkActions.js';
 import { useAppKeys } from './hooks/useAppKeys.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { useSnapshot } from './hooks/useSnapshot.js';
+import { useSnapshotRun } from './hooks/useSnapshotRun.js';
 import { usePage } from './hooks/usePage.js';
 import { HomePage, type HomeAction } from './pages/HomePage.js';
 import { MainPage } from './pages/MainPage.js';
@@ -19,13 +20,20 @@ import { WizardPage } from './pages/WizardPage.js';
 import { AddProjectPage } from './pages/AddProjectPage.js';
 import { BulkClonePage } from './pages/BulkClonePage.js';
 import { HelpPage } from './pages/HelpPage.js';
+import { SnapshotPage } from './pages/SnapshotPage.js';
+import { SettingsPage } from './pages/SettingsPage.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
 import { ScriptRunner } from '../core/runner.js';
-import { getBestRoot, pathExists, resolveProjectPath } from '../shared/paths.js';
-import type { GitStatus, Project } from '../shared/types.js';
+import { scanForSnapshots } from '../core/snapshot-scanner.js';
+import { openZipBlobStoreReader } from '../core/blob-store.js';
+import { SnapshotEngine, type SnapshotEvent } from '../core/snapshot.js';
+import { getBestRoot, pathExists, resolveProjectPath, expandHome, getDefaultSnapshotDir } from '../shared/paths.js';
+import { SnapshotSchema, type GitStatus, type Project } from '../shared/types.js';
 import type { ParsedEntry } from './components/BulkCloneForm.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 export function App() {
   const { manifest, projects, loading, reload, store } = useManifest();
@@ -80,6 +88,10 @@ export function App() {
     resolvePath,
   });
   const snapshot = useSnapshot(manifest);
+  const snapRun = useSnapshotRun(manifest);
+  const [snapEvents, setSnapEvents] = useState<AsyncIterable<SnapshotEvent> | null>(null);
+  const [snapMode, setSnapMode] = useState<'create' | 'restore'>('create');
+  const [snapProjects, setSnapProjects] = useState<Project[]>([]);
   const { cols, rows } = useTerminalSize();
 
   // Stable callbacks for keys
@@ -133,7 +145,46 @@ export function App() {
     else if (action === 'addProject') page.goto('addProject');
     else if (action === 'wizard') page.goto('wizard');
     else if (action === 'export') void snapshot.exportSnapshot();
-  }, [page, activeGroup, snapshot]);
+    else if (action === 'snapshotCreate') {
+      if (!manifest || projects.length === 0) return;
+      void snapRun.startCreate(projects).then(({ iterable }) => {
+        setSnapMode('create');
+        setSnapProjects(projects);
+        setSnapEvents(iterable);
+        page.goto('snapshot');
+      });
+    }
+    else if (action === 'snapshotRestore') {
+      if (!manifest || !snapRun.engine) return;
+      const dir = expandHome(manifest.snapshotDir ?? getDefaultSnapshotDir());
+      void scanForSnapshots(dir).then(async (files) => {
+        files.sort((a, b) => (a < b ? 1 : -1));
+        if (files.length === 0) return;
+        const target = files[0];
+        const reader = await openZipBlobStoreReader(target);
+        const snap = SnapshotSchema.parse(JSON.parse(await reader.readMetadata('snapshot.json')));
+        const restoreEngine = new SnapshotEngine({
+          git: new GitOps(),
+          openWriter: () => Promise.reject(new Error('writer not used on restore')),
+          openReader: () => Promise.resolve(reader),
+          resolveProjectPath: (_r, p) => path.join(expandHome(manifest.root), p.group, p.name),
+          destExists: async (p) => !!(await fs.stat(p).catch(() => null)),
+          removeDest: async (p) => fs.rm(p, { recursive: true, force: true }),
+        });
+        const shallowProjects = snap.projects.map((p) => ({ name: p.name, group: p.group, url: p.url }));
+        setSnapMode('restore');
+        setSnapProjects(shallowProjects);
+        setSnapEvents(restoreEngine.restore({
+          snapshot: snap,
+          snapshotPath: target,
+          rootDir: manifest.root,
+          onConflict: async () => 'overwrite',
+        }));
+        page.goto('snapshot');
+      });
+    }
+    else if (action === 'settings') page.goto('settings');
+  }, [page, activeGroup, snapshot, manifest, projects, snapRun]);
 
   const handleBulkClone = useCallback(async (entries: ParsedEntry[]) => {
     page.reset('home');
@@ -207,6 +258,30 @@ export function App() {
           root={root}
           onScan={() => page.replace('wizard')}
           onAddProject={() => page.goto('addProject')}
+        />
+      );
+    case 'snapshot':
+      if (!snapEvents) {
+        return (
+          <Box flexDirection="column" paddingX={2} paddingY={1}>
+            <Text color="yellow">No snapshot in progress.</Text>
+            <Text dimColor>Esc to return.</Text>
+          </Box>
+        );
+      }
+      return (
+        <SnapshotPage
+          mode={snapMode}
+          projects={snapProjects}
+          events={snapEvents}
+          onExit={() => { setSnapEvents(null); page.reset('home'); void reload(); }}
+        />
+      );
+    case 'settings':
+      return (
+        <SettingsPage
+          initialSnapshotDir={manifest?.snapshotDir}
+          onExit={() => { page.reset('home'); void reload(); }}
         />
       );
     case 'main':

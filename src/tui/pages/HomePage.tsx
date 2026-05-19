@@ -16,6 +16,9 @@ export type HomeAction =
   | 'addProject'
   | 'wizard'
   | 'export'
+  | 'snapshotCreate'
+  | 'snapshotRestore'
+  | 'settings'
   | 'quit';
 
 type Item = { label: string; value: HomeAction };
@@ -44,12 +47,17 @@ function HomePageImpl({
         { label: '➕  Add a project   — single repo by URL', value: 'addProject' },
         { label: '🔍  Scan wizard     — auto-discover repos under root', value: 'wizard' },
         { label: '💾  Export snapshot — save manifest to JSON', value: 'export' },
+        { label: '📦  Snapshot create — capture project working state', value: 'snapshotCreate' },
+        { label: '♻️   Snapshot restore — restore from a .npmsnap', value: 'snapshotRestore' },
+        { label: '⚙️   Settings        — configure snapshotDir', value: 'settings' },
         { label: '⏻   Quit', value: 'quit' },
       ]
     : [
         { label: '🚀  Massive clone   — paste git URLs and clone in bulk', value: 'bulkClone' },
         { label: '➕  Add a project   — single repo by URL', value: 'addProject' },
         { label: '🔍  Scan wizard     — auto-discover repos under root', value: 'wizard' },
+        { label: '♻️   Snapshot restore — restore from a .npmsnap', value: 'snapshotRestore' },
+        { label: '⚙️   Settings        — configure snapshotDir', value: 'settings' },
         { label: '⏻   Quit', value: 'quit' },
       ];
 

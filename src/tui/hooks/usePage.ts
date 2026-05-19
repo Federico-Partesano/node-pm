@@ -1,6 +1,14 @@
 import { useCallback, useState } from 'react';
 
-export type PageId = 'home' | 'main' | 'wizard' | 'addProject' | 'bulkClone' | 'emptyHelp';
+export type PageId =
+  | 'home'
+  | 'main'
+  | 'wizard'
+  | 'addProject'
+  | 'bulkClone'
+  | 'emptyHelp'
+  | 'snapshot'
+  | 'settings';
 
 export type PageState = {
   id: PageId;
