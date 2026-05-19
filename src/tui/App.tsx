@@ -13,6 +13,8 @@ import { useAppKeys } from './hooks/useAppKeys.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { useSnapshot } from './hooks/useSnapshot.js';
 import { useSnapshotRun } from './hooks/useSnapshotRun.js';
+import { useSnapshotsIndex } from './hooks/useSnapshotsIndex.js';
+import { useProjectHealth } from './hooks/useProjectHealth.js';
 import { usePage } from './hooks/usePage.js';
 import { HomePage, type HomeAction } from './pages/HomePage.js';
 import { MainPage } from './pages/MainPage.js';
@@ -90,6 +92,21 @@ export function App() {
   });
   const snapshot = useSnapshot(manifest);
   const snapRun = useSnapshotRun(manifest);
+  const snapshotDirResolved = useMemo(
+    () => (manifest ? expandHome(manifest.snapshotDir ?? getDefaultSnapshotDir()) : null),
+    [manifest],
+  );
+  const { index: snapshotsByProject, loading: snapshotsLoading } =
+    useSnapshotsIndex(snapshotDirResolved);
+  const curSnapshots = useMemo(
+    () => (cur ? (snapshotsByProject.get(`${cur.group}/${cur.name}`) ?? []) : []),
+    [snapshotsByProject, cur],
+  );
+  const curStatus = useMemo(
+    () => (cur ? (statusByName.get(cur.name) ?? null) : null),
+    [statusByName, cur],
+  );
+  const { health: curHealth, loading: healthLoading } = useProjectHealth(curPath);
   const [snapEvents, setSnapEvents] = useState<AsyncIterable<SnapshotEvent> | null>(null);
   const [snapMode, setSnapMode] = useState<'create' | 'restore'>('create');
   const [snapProjects, setSnapProjects] = useState<Project[]>([]);
@@ -325,6 +342,11 @@ export function App() {
           cur={cur}
           curPath={curPath}
           pmName={pmName}
+          curStatus={curStatus}
+          curSnapshots={curSnapshots}
+          snapshotsLoading={snapshotsLoading}
+          curHealth={curHealth}
+          healthLoading={healthLoading}
           tasks={tasks}
           logs={logs}
           activeLog={activeLog}

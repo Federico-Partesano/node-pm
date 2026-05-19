@@ -5,6 +5,8 @@ import type { GroupSummary } from '../panels/Groups.js';
 import type { QueueTask } from '../hooks/useQueue.js';
 import type { LogTab } from '../panels/Logs.js';
 import type { SnapshotResult } from '../hooks/useSnapshot.js';
+import type { SnapshotIndexEntry } from '../hooks/useSnapshotsIndex.js';
+import type { ProjectHealth } from '../hooks/useProjectHealth.js';
 import { Header } from '../components/Header.js';
 import { Footer, MAIN_HINTS } from '../components/Footer.js';
 import { Groups } from '../panels/Groups.js';
@@ -32,6 +34,11 @@ type Props = {
   cur: Project | null;
   curPath: string | null;
   pmName: PMName | null;
+  curStatus: GitStatus | null;
+  curSnapshots: SnapshotIndexEntry[];
+  snapshotsLoading: boolean;
+  curHealth: ProjectHealth | null;
+  healthLoading: boolean;
   tasks: QueueTask[];
   logs: LogTab[];
   activeLog: string | null;
@@ -70,7 +77,16 @@ function MainPageImpl(p: Props) {
             />
           </Box>
           <Box flexGrow={2} flexBasis={0} minWidth={32}>
-            <Detail project={p.cur} path={p.curPath} pmName={p.pmName} />
+            <Detail
+              project={p.cur}
+              path={p.curPath}
+              pmName={p.pmName}
+              status={p.curStatus}
+              snapshots={p.curSnapshots}
+              snapshotsLoading={p.snapshotsLoading}
+              health={p.curHealth}
+              healthLoading={p.healthLoading}
+            />
           </Box>
         </Box>
         <Box flexGrow={1} flexBasis={0}>
