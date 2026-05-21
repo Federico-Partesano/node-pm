@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import writeFileAtomic from 'write-file-atomic';
-import { ManifestSchema, type Manifest, type Project } from '../shared/types.js';
-import { ManifestError } from '../shared/errors.js';
+import { ManifestSchema, type Manifest, type Project, type Session } from '../shared/types.js';
+import { ManifestError, SessionError } from '../shared/errors.js';
 import { getManifestPath, getDefaultRoot, expandHome, getConfigDir } from '../shared/paths.js';
 
 export class ManifestStore {
@@ -92,5 +92,57 @@ export class ManifestStore {
 
   invalidate(): void {
     this.cache = null;
+  }
+
+  async listSessions(): Promise<Session[]> {
+    const m = await this.load();
+    return m.sessions ?? [];
+  }
+
+  async getSession(id: string): Promise<Session | null> {
+    const m = await this.load();
+    return (m.sessions ?? []).find((s) => s.id === id) ?? null;
+  }
+
+  async addSession(s: Session): Promise<void> {
+    assertUniqueTerminals(s);
+    const m = await this.load();
+    const sessions = m.sessions ?? [];
+    if (sessions.some((x) => x.id === s.id)) {
+      throw new SessionError(`Session "${s.id}" already exists`, 'E_SESSION_DUPLICATE');
+    }
+    await this.save({ ...m, sessions: [...sessions, s] });
+  }
+
+  async updateSession(s: Session): Promise<void> {
+    assertUniqueTerminals(s);
+    const m = await this.load();
+    const sessions = m.sessions ?? [];
+    const idx = sessions.findIndex((x) => x.id === s.id);
+    if (idx < 0) {
+      throw new SessionError(`Session "${s.id}" not found`, 'E_SESSION_NOT_FOUND');
+    }
+    const next = sessions.slice();
+    next[idx] = s;
+    await this.save({ ...m, sessions: next });
+  }
+
+  async removeSession(id: string): Promise<void> {
+    const m = await this.load();
+    const sessions = m.sessions ?? [];
+    await this.save({ ...m, sessions: sessions.filter((s) => s.id !== id) });
+  }
+}
+
+function assertUniqueTerminals(s: Session): void {
+  const names = new Set<string>();
+  for (const t of s.terminals) {
+    if (names.has(t.name)) {
+      throw new SessionError(
+        `Duplicate terminal name "${t.name}" in session "${s.id}"`,
+        'E_SESSION_DUP_TERMINAL',
+      );
+    }
+    names.add(t.name);
   }
 }

@@ -50,3 +50,10 @@ export class SnapshotError extends NodePMError {
     this.name = 'SnapshotError';
   }
 }
+
+export class SessionError extends NodePMError {
+  constructor(message: string, code: string, cause?: Error) {
+    super(message, code, cause);
+    this.name = 'SessionError';
+  }
+}

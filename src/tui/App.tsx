@@ -28,6 +28,8 @@ import { HelpPage } from './pages/HelpPage.js';
 import { SnapshotPage } from './pages/SnapshotPage.js';
 import { SnapshotPickerPage } from './pages/SnapshotPickerPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
+import { SessionsPage } from './pages/SessionsPage.js';
+import { useSessions } from './hooks/useSessions.js';
 import { GitOps } from '../core/git.js';
 import { PackageManager } from '../core/pm.js';
 import { TaskQueue } from '../core/queue.js';
@@ -112,6 +114,7 @@ export function App() {
   const { health: curHealth, loading: healthLoading } = useProjectHealth(curPath);
   const { checks: curHealthChecks, runAll: runAllChecks, runOne: runOneCheck } = useHealthChecks(curPath);
   const quickActions = useQuickActions({ git, pm, store, reload });
+  const sessions = useSessions(store);
   const [quickOpen, setQuickOpen] = useState(false);
   const [snapEvents, setSnapEvents] = useState<AsyncIterable<SnapshotEvent> | null>(null);
   const [snapMode, setSnapMode] = useState<'create' | 'restore'>('create');
@@ -221,7 +224,11 @@ export function App() {
       });
     }
     else if (action === 'settings') page.goto('settings');
-  }, [page, activeGroup, snapshot, manifest, projects, snapRun]);
+    else if (action === 'sessions') {
+      void sessions.reload();
+      page.goto('sessions');
+    }
+  }, [page, activeGroup, snapshot, manifest, projects, snapRun, sessions]);
 
   const handleBulkClone = useCallback(async (entries: ParsedEntry[]) => {
     page.reset('home');
@@ -342,6 +349,22 @@ export function App() {
           height={rows}
           initialSnapshotDir={manifest?.snapshotDir}
           onExit={() => { page.reset('home'); void reload(); }}
+        />
+      );
+    case 'sessions':
+      return (
+        <SessionsPage
+          width={cols}
+          height={rows}
+          sessions={sessions.sessions}
+          loading={sessions.loading}
+          resolveProjectPath={(ref) => {
+            const [group, name] = ref.split('/');
+            if (!manifest || !group || !name) return '';
+            return path.join(expandHome(manifest.root), group, name);
+          }}
+          onExit={() => page.reset('home')}
+          onRemove={async (id) => { await sessions.remove(id); }}
         />
       );
     case 'main':

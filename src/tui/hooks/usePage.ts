@@ -9,7 +9,8 @@ export type PageId =
   | 'emptyHelp'
   | 'snapshot'
   | 'snapshotPicker'
-  | 'settings';
+  | 'settings'
+  | 'sessions';
 
 export type PageState = {
   id: PageId;

@@ -16,6 +16,23 @@ export const SyncStateSchema = z.object({
   lastSync: z.string().datetime(),
 });
 
+export const TerminalSpecSchema = z.object({
+  name: z.string().min(1),
+  projectRef: z.string().min(1),
+  cmd: z.string().min(1),
+  cwd: z.string().optional(),
+  env: z.record(z.string()).optional(),
+});
+export type TerminalSpec = z.infer<typeof TerminalSpecSchema>;
+
+export const SessionSchema = z.object({
+  id: z.string().min(1).regex(/^[a-z0-9][a-z0-9-_]*$/),
+  label: z.string().min(1),
+  description: z.string().optional(),
+  terminals: z.array(TerminalSpecSchema).min(1),
+});
+export type Session = z.infer<typeof SessionSchema>;
+
 export const ManifestSchema = z.object({
   version: z.literal(1),
   root: z.string().min(1),
@@ -23,6 +40,7 @@ export const ManifestSchema = z.object({
   sync: SyncStateSchema.optional(),
   snapshotDir: z.string().optional(),
   projects: z.array(ProjectSchema),
+  sessions: z.array(SessionSchema).optional(),
 });
 
 export const BlobRefSchema = z.object({

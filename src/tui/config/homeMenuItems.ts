@@ -6,6 +6,7 @@ export type HomeAction =
   | 'export'
   | 'snapshotCreate'
   | 'snapshotRestore'
+  | 'sessions'
   | 'settings'
   | 'quit';
 
@@ -145,6 +146,33 @@ export const HOME_MENU_ITEMS: Record<HomeAction, HomeMenuItem> = {
       "Utile per: macchina nuova dopo un wipe, ripristino dopo refactor andato male, riproduzione di un bug state da un collega.",
     ],
   },
+  sessions: {
+    value: 'sessions',
+    icon: '🖥 ',
+    label: 'Sessions',
+    short: 'run multi-project dev stacks',
+    title: 'Sessions — stack di dev multi-progetto',
+    description: [
+      "Una Session è un set nominale di terminali, ognuno con un comando lungo (es. `npm run dev`) eseguito nel cwd di un progetto specifico. Premi Enter e tutti partono in parallelo, con i log live in panel affiancati nel TUI.",
+      "",
+      "Tipico uso: monorepo con api + web + db. Definisci una sola volta la session `dev`, poi un tasto la lancia ogni volta che apri node-pm.",
+      "",
+      "v1: solo foreground (chiudendo la pagina o uscendo dal TUI, i processi vengono terminati). Niente PTY interattivo, niente attach/detach. Per i comandi long-running di logging è più che sufficiente.",
+      "",
+      "Le session vengono salvate nel manifest. Crea/edita via CLI:",
+      "  pm session create dev --label 'Dev stack' \\",
+      "    --terminal 'api=oss/api:npm run dev' \\",
+      "    --terminal 'web=oss/web:npm run dev'",
+      "  pm session run dev",
+    ],
+    keys: [
+      { key: '↑↓ / j k', label: 'naviga la sidebar' },
+      { key: 'enter', label: 'avvia la session' },
+      { key: '1..9', label: 'metti il focus su un pannello' },
+      { key: 'k / r', label: 'kill / restart pannello focusato' },
+      { key: 'd', label: 'elimina la session selezionata' },
+    ],
+  },
   settings: {
     value: 'settings',
     icon: '⚙️ ',
@@ -181,6 +209,7 @@ export const HOME_MENU_ORDER_FULL: HomeAction[] = [
   'export',
   'snapshotCreate',
   'snapshotRestore',
+  'sessions',
   'settings',
   'quit',
 ];
@@ -190,6 +219,7 @@ export const HOME_MENU_ORDER_EMPTY: HomeAction[] = [
   'addProject',
   'wizard',
   'snapshotRestore',
+  'sessions',
   'settings',
   'quit',
 ];
